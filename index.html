@@ -21482,5 +21482,15 @@ service cloud.firestore {
       });
     }
   </script>
+<style>
+  /* Bloqueio total do widget de IA do Netlify */
+  [id*="netlify"], 
+  [class*="netlify"],
+  iframe[title*="Netlify"] {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+</style>
 </body>
 </html>
