@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Achou, Levou! | Gerenciador de Afiliados</title>
+  <link rel="manifest" href="manifest.json">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -2431,6 +2432,32 @@
           <button type="submit" id="btnReauthSubmit" class="px-4 py-2 text-white font-bold text-xs rounded-xl shadow">Confirmar</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal: Gerenciar Categorias (Produtos e Tarefas) -->
+  <div id="modalCategoryManage" class="fixed inset-0 z-[75] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+          <i class="fa-solid fa-folder-tree dynamic-text"></i> Gerenciar Categorias
+        </h3>
+        <button type="button" onclick="closeModal('modalCategoryManage')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="p-4 bg-slate-50 dark:bg-slate-700/40 border-b border-slate-100 dark:border-slate-700 flex gap-2">
+        <input type="text" id="modalNewCategoryInput" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewCategoryFromModal();}" placeholder="Nova Categoria..." class="flex-1 px-3 py-2 text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-400">
+        <button type="button" onclick="addNewCategoryFromModal()" class="px-3.5 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold rounded-xl shadow-sm hover:opacity-90 transition">
+          Adicionar
+        </button>
+      </div>
+      <div id="modalCategoriesList" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+      <div class="p-4 border-t border-slate-100 dark:border-slate-700 flex justify-end bg-white dark:bg-slate-800">
+        <button type="button" onclick="closeModal('modalCategoryManage')" class="px-5 py-2 text-xs font-bold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl transition-colors">
+          Concluir
+        </button>
+      </div>
     </div>
   </div>
 
@@ -12360,9 +12387,31 @@ service cloud.firestore {
     };
 
     window.openPlanningPeriodModal = function() {
+      const listEl = document.getElementById('planningPeriodWeeksList');
+      if (listEl) {
+        const weeks = window.appData.planningWeeks || [];
+        const activeId = window.appData.activePlanningWeekId;
+        listEl.innerHTML = weeks.map(w => {
+          const isSelected = w.id === activeId;
+          return `<button type="button" onclick="window.jumpToPlanningWeek('${w.id}')" class="w-full text-left p-3 mb-2 rounded-xl border ${isSelected ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900' : 'bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700'} text-xs font-bold transition flex justify-between items-center">
+            <span>${escapeHtmlText(w.name)}</span>
+            <span class="text-[10px] opacity-75 font-normal">${window.formatDate(w.startDate)} - ${window.formatDate(w.endDate)}</span>
+          </button>`;
+        }).join('');
+      }
       document.getElementById('modalPlanningPeriod').classList.remove('hidden');
     };
     
+    window.jumpToPlanningWeek = async function(weekId) {
+      window.appData.activePlanningWeekId = weekId;
+      const week = (window.appData.planningWeeks || []).find(w => w.id === weekId);
+      if (week) window.currentPlanningStartDate = planningParseISO(week.startDate);
+      window.planningVisibleStartIndex = 0;
+      window.renderCalendarView();
+      await window.saveState();
+      window.closeModal('modalPlanningPeriod');
+    };
+
     window.cancelPlanningPeriodModal = function() {
       window.closeModal('modalPlanningPeriod');
     };
@@ -12576,7 +12625,7 @@ service cloud.firestore {
           activityChecklist: { roteiro: true, producao: true, edicao: true, preparacao: true, publicar: true }, completedStages: { roteiro: true, producao: true, edicao: true, preparacao: true, publicar: true },
           destinationStatuses: { "Kwai|acc_demo_kwai_1": { status: "publicado", format: "Vídeo", publishedAt: "2026-05-15T09:00" }, "Facebook|acc_demo_fb_1": { status: "publicado", format: "Reels", publishedAt: "2026-05-15T09:30" } }, isCompleted: true, completedAt: "2026-05-15T09:35", publishedAt: "2026-05-15T09:00", order: 2
         }
-      ].map(item => ({ ...item, isDemo: true, userModified: true, createdAt: "2025-01-01T12:00:00Z" }));
+      ].map(item => ({ ...item, isDemo: true, createdAt: "2025-01-01T12:00:00Z" }));
 
       // Extrai publicações dos conteúdos concluídos/publicados
       const demoPublications = [];
@@ -12619,7 +12668,7 @@ service cloud.firestore {
         { id: "t_demo_b_5", text: "Encontrar cupons da Shein", observations: "Pesquisar promoções ativas para o próximo vídeo.", date: null, weekId: null, platform: "Shein", status: "banco", category: "Administrativo", categoryId: "Administrativo", linkedContentId: null, customColor: null, completedDates: [], skipDates: [] },
         { id: "t_demo_b_6", text: "Responder comentários YouTube", observations: "Tirar dúvidas sobre a durabilidade da Air Fryer.", date: null, weekId: null, platform: "YouTube", status: "banco", category: "Administrativo", categoryId: "Administrativo", linkedContentId: null, customColor: null, completedDates: [], skipDates: [] },
         { id: "t_demo_b_7", text: "Procurar novos achadinhos Pet", observations: "Nicho em alta no TikTok.", date: null, weekId: null, platform: "TikTok Shop", status: "banco", category: "Geral", categoryId: "Geral", linkedContentId: null, customColor: null, completedDates: [], skipDates: [] }
-      ].map(t => ({ ...t, isDemo: true, userModified: true }));
+      ].map(t => ({ ...t, isDemo: true }));
 
       return {
         isDemoDataset: true,
@@ -16184,8 +16233,8 @@ service cloud.firestore {
 
         const isUserItem = (item, demoPrefix) => {
           if (!item || typeof item !== 'object') return false;
-          if (item.userModified === true) return true;
           if (item.isDemo === true) return false;
+          if (item.userModified === true) return true;
           const s = String(item.id || '').trim();
           return Boolean(s && !s.startsWith(demoPrefix));
         };
@@ -20743,6 +20792,11 @@ service cloud.firestore {
         if (input) input.value = '';
         window.renderCfgPublishingAccountsAndPlatforms();
         window.renderPublishingAccountsList();
+        
+        const modalTargetPlat = window.activeMuralHierarchyPlatform;
+        if (modalTargetPlat === plat) {
+          window.onMuralHierarchyAccountChange(newAcc.id);
+        }
         if (!document.getElementById('modalMuralContentItem')?.classList.contains('hidden')) {
           window.renderMuralModalDestinationsUI();
         }
@@ -21268,10 +21322,12 @@ service cloud.firestore {
             window.appData = normalizeCloudData(finalFirstCloudData, activeAuth?.currentUser);
             window.appData.ownerUid = uid;
             await window.saveState();
-          } else if (!effectiveLocalEntry || !effectiveLocalEntry.data) {
+          } else {
+            const userKey = getUserStorageKey(uid);
             const cleanBase = buildCleanWorkspaceDataset();
             window.appData = normalizeCloudData(cleanBase, activeAuth?.currentUser);
             window.appData.ownerUid = uid;
+            writeAndConfirmLocalStorage(userKey, JSON.stringify(window.appData), storageAdapter);
             await window.saveState();
           }
           onDataLoadedFromCloud();
@@ -21403,13 +21459,27 @@ service cloud.firestore {
         });
       });
       window.addEventListener('beforeunload', (e) => {
-        if (pendingSyncSnapshot !== null || activeSyncLoopPromise !== null) {
-          e.preventDefault();
-          e.returnValue = '';
+      if (pendingSyncSnapshot !== null || activeSyncLoopPromise !== null) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+    initializeAppAuthAndSync();
+  });
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        try {
+          navigator.serviceWorker.register('./sw.js').catch(err => {
+            console.warn('Registro do Service Worker falhou (esperado em ambientes de pré-visualização):', err);
+          });
+        } catch (e) {
+          console.warn('Erro ao tentar registrar o Service Worker:', e);
         }
       });
-      initializeAppAuthAndSync();
-    });
+    }
   </script>
 </body>
 </html>
