@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#ffffff">
   <title>Achou, Levou! | Gerenciador de Afiliados</title>
+  <meta name="theme-color" content="#ffffff">
   <link rel="manifest" href="manifest.json">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -526,7 +526,7 @@
               <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Registro de Vendas</h2>
               <p class="text-xs text-slate-500">Histórico e acompanhamento de comissões</p>
             </div>
-            <button onclick="openAddSaleModal()" id="btnAddSale" class="py-2.5 px-4 text-white font-bold text-sm rounded-xl shadow flex items-center justify-center gap-2 transition-transform active:scale-95">
+            <button type="button" onclick="openAddSaleModal()" id="btnAddSale" class="py-2.5 px-4 text-white font-bold text-sm rounded-xl shadow flex items-center justify-center gap-2 transition-transform active:scale-95">
               <i class="fa-solid fa-plus"></i> Registrar Venda
             </button>
           </div>
@@ -629,7 +629,7 @@
                   <span class="text-slate-500 text-sm font-medium">de <span id="finGoalTarget">R$ 1.000,00</span></span>
                 </div>
               </div>
-              <button onclick="openEditGoalModal()" id="btnEditGoal" class="px-4 py-2 text-white text-xs font-bold rounded-xl shadow transition">
+              <button type="button" onclick="openEditGoalModal()" id="btnEditGoal" class="px-4 py-2 text-white text-xs font-bold rounded-xl shadow transition">
                 Editar Meta
               </button>
             </div>
@@ -1207,8 +1207,8 @@
                 <p class="text-[11px] text-slate-500 mt-0.5">Canais selecionáveis ao registrar uma venda</p>
               </div>
               <div class="flex gap-2">
-                <input type="text" id="newOriginInput" placeholder="Ex: Grupo VIP, WhatsApp, Stories..." class="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl font-semibold">
-                <button onclick="addNewCustomOrigin()" id="btnAddOrigin" class="px-4 py-2 text-white font-bold text-xs rounded-xl shadow">Adicionar</button>
+                <input type="text" id="newOriginInput" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewCustomOrigin();}" placeholder="Ex: Grupo VIP, WhatsApp, Stories..." class="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl font-semibold">
+                <button type="button" onclick="addNewCustomOrigin()" id="btnAddOrigin" class="px-4 py-2 text-white font-bold text-xs rounded-xl shadow">Adicionar</button>
               </div>
               <div id="cfgOriginsList" class="max-h-48 overflow-y-auto space-y-1.5 pt-1 divide-y divide-slate-100 dark:divide-slate-700 pr-1"></div>
             </div>
@@ -1224,21 +1224,21 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs font-semibold mb-1">Nome de Exibição</label>
-                  <input type="text" id="cfgUserName" value="Dudu" class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl font-semibold">
+                  <input type="text" id="cfgUserName" onkeydown="if(event.key==='Enter'){event.preventDefault();saveConfigurations();}" value="Dudu" class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl font-semibold">
                 </div>
                 <div>
                   <label class="block text-xs font-semibold mb-1">E-mail da Conta</label>
                   <div class="flex gap-1.5">
-                    <input type="email" id="cfgUserEmail" placeholder="novo@email.com" class="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl font-mono">
-                    <button onclick="promptForEmailUpdatePassword()" class="px-3 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs rounded-xl shadow flex-shrink-0">Alterar</button>
+                    <input type="email" id="cfgUserEmail" onkeydown="if(event.key==='Enter'){event.preventDefault();promptForEmailUpdatePassword();}" placeholder="novo@email.com" class="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl font-mono">
+                    <button type="button" onclick="promptForEmailUpdatePassword()" class="px-3 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs rounded-xl shadow flex-shrink-0">Alterar</button>
                   </div>
                 </div>
               </div>
               <div class="flex items-center gap-2 pt-2">
-                <button onclick="saveConfigurations()" id="btnSaveCfg" class="flex-1 py-2.5 text-white font-bold text-xs rounded-xl shadow">
+                <button type="button" onclick="saveConfigurations()" id="btnSaveCfg" class="flex-1 py-2.5 text-white font-bold text-xs rounded-xl shadow">
                   Salvar Perfil
                 </button>
-                <button onclick="handleLogout()" class="px-4 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl transition">
+                <button type="button" onclick="handleLogout()" class="px-4 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl transition">
                   Sair da Conta
                 </button>
               </div>
@@ -1309,6 +1309,147 @@
   </div>
 
   <!-- MODALS -->
+
+  <!-- Modal: Editar Meta Mensal -->
+  <div id="modalEditGoal" class="fixed inset-0 z-[65] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white">Editar Meta Mensal</h3>
+        <button type="button" onclick="closeModal('modalEditGoal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div>
+        <label class="block text-xs font-bold mb-1">Nova Meta (R$)</label>
+        <input type="number" id="inputNewGoalValue" onkeydown="if(event.key==='Enter'){event.preventDefault();saveNewGoalValue();}" step="0.01" class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl font-bold">
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModal('modalEditGoal')" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition">Cancelar</button>
+        <button type="button" id="btnSaveGoalModal" onclick="saveNewGoalValue()" class="px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs rounded-xl shadow transition">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Copiar Lista de Produtos -->
+  <div id="modalCopyProductsList" class="fixed inset-0 z-[65] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+          <i class="fa-regular fa-copy dynamic-text"></i> Copiar Lista de Produtos
+        </h3>
+        <button type="button" onclick="closeModal('modalCopyProductsList')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto space-y-4 pr-1">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Filtrar por Plataforma</span>
+            <button type="button" onclick="selectAllCopyPlatforms()" class="text-[10px] font-bold text-slate-500 hover:underline">Selecionar todas</button>
+          </div>
+          <div id="copyListPlatformsContainer" class="flex flex-wrap gap-2"></div>
+        </div>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Filtrar por Categoria</span>
+            <button type="button" onclick="selectAllCopyCategories()" class="text-[10px] font-bold text-slate-500 hover:underline">Selecionar todas</button>
+          </div>
+          <div id="copyListCategoriesContainer" class="flex flex-wrap gap-2"></div>
+        </div>
+      </div>
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
+        <span id="copyListMatchedCount" class="text-xs font-extrabold text-slate-500">0 produtos</span>
+        <button type="button" onclick="confirmCopyProductsList()" class="px-5 py-2.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs rounded-xl shadow transition active:scale-95">
+          Copiar Texto
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Copiar Ideias do Mural -->
+  <div id="modalCopyMuralItems" class="fixed inset-0 z-[65] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+          <i class="fa-regular fa-copy dynamic-text"></i> Copiar Ideias
+        </h3>
+        <button type="button" onclick="closeModal('modalCopyMuralItems')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto space-y-4 pr-1">
+        <div class="space-y-2">
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Status dos Conteúdos</span>
+          <div class="flex gap-2">
+            <button type="button" id="btnCopyMuralStatusActive" onclick="toggleCopyMuralStatus('active')" class="flex-1"></button>
+            <button type="button" id="btnCopyMuralStatusCompleted" onclick="toggleCopyMuralStatus('completed')" class="flex-1"></button>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Filtrar por Categoria</span>
+            <button type="button" onclick="selectAllCopyMuralCategories()" class="text-[10px] font-bold text-slate-500 hover:underline">Selecionar todas</button>
+          </div>
+          <div id="copyMuralCategoriesContainer" class="flex flex-wrap gap-2"></div>
+        </div>
+      </div>
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
+        <span id="copyMuralMatchedCount" class="text-xs font-extrabold text-slate-500">0 ideias</span>
+        <button type="button" onclick="confirmCopyMuralItems()" class="px-5 py-2.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs rounded-xl shadow transition active:scale-95">
+          Copiar Texto
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Selecionar Período de Planejamento -->
+  <div id="modalPlanningPeriod" class="fixed inset-0 z-[65] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-xs rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 space-y-4 max-h-[80vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+          <i class="fa-regular fa-calendar-check text-indigo-500"></i> Semanas
+        </h3>
+        <button type="button" onclick="cancelPlanningPeriodModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="planningPeriodWeeksList" class="flex-1 overflow-y-auto pr-1"></div>
+      <div class="pt-3 border-t border-slate-100 dark:border-slate-700">
+        <button type="button" id="btnConfirmPlanningPeriod" onclick="applyPlanningPeriod()" class="w-full px-5 py-2.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:opacity-90 font-bold text-xs rounded-xl shadow transition">
+          Concluir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Personalizar Ícone da Categoria (Planejamento) -->
+  <div id="modalTaskCategoryIconPicker" class="fixed inset-0 z-[65] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+        <div>
+          <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-icons dynamic-text"></i> Escolher Ícone
+          </h3>
+          <p id="iconPickerCategorySubtitle" class="text-[11px] text-slate-400 mt-0.5">Categoria</p>
+        </div>
+        <button type="button" onclick="closeModal('modalTaskCategoryIconPicker')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      
+      <div class="flex items-center justify-center p-3 bg-slate-50 dark:bg-slate-700/50 rounded-2xl border border-slate-200 dark:border-slate-600">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-bold text-slate-500">Ícone atual:</span>
+          <div id="iconPickerPreviewBadge" class="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"></div>
+        </div>
+      </div>
+
+      <div id="taskCategoryIconsGridContainer" class="space-y-4 pb-2"></div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
+        <button type="button" onclick="resetTaskCategoryIconToDefault()" class="text-[11px] font-bold text-slate-500 hover:underline">Restaurar Padrão</button>
+        <button type="button" onclick="closeModal('modalTaskCategoryIconPicker')" class="px-5 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold rounded-xl shadow">Concluir</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal: Registrar Venda -->
   <div id="modalSale" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
@@ -21482,15 +21623,17 @@ service cloud.firestore {
       });
     }
   </script>
-<style>
-  /* Bloqueio total do widget de IA do Netlify */
-  [id*="netlify"], 
-  [class*="netlify"],
-  iframe[title*="Netlify"] {
-    display: none !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
-</style>
+
+  <style>
+    /* Bloqueio total do widget de IA e marcas d'água do Netlify */
+    [id*="netlify"], 
+    [class*="netlify"],
+    iframe[title*="Netlify"] {
+      display: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
+    }
+  </style>
 </body>
 </html>
