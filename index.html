@@ -2682,7 +2682,7 @@ service cloud.firestore {
   <!-- FIREBASE SDKS & APP LOGIC -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, onSnapshot, enableMultiTabIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification, signInWithCustomToken, updateEmail, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
@@ -12257,6 +12257,11 @@ service cloud.firestore {
     try {
       app = initializeApp(firebaseConfig);
       db = getFirestore(app);
+      try {
+        enableMultiTabIndexedDbPersistence(db).catch((err) => {
+          console.warn("Aviso de persistência offline (esperado em abas duplas ou incognito):", err);
+        });
+      } catch(e) {}
       if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "demo") {
         auth = getAuth(app);
       }
@@ -15798,7 +15803,9 @@ service cloud.firestore {
             } else {
               await offloadPendingBase64ImagesBeforeCloudSync(job.data, job.uid);
               const docRef = doc(db, 'artifacts', appId, 'users', job.uid, 'data', 'main_store');
-              await setDoc(docRef, job.data);
+              await setDoc(docRef, job.data).catch(err => {
+                throw err;
+              });
             }
             if (job.seq > latestCompletedSyncSeq) {
               latestCompletedSyncSeq = job.seq;
@@ -21311,6 +21318,7 @@ service cloud.firestore {
           window.isCloudAccountHydrated = true;
           window.appData = normalizeCloudData(effectiveLocalEntry.data, activeAuth?.currentUser);
           window.appData.ownerUid = uid;
+          onDataLoadedFromCloud();
         }
       }
 
@@ -21330,13 +21338,11 @@ service cloud.firestore {
         if (!activeAuth?.currentUser || activeAuth.currentUser.uid !== uid) return;
         if (snap.metadata && snap.metadata.hasPendingWrites) return;
 
-        // CORREÇÃO CRÍTICA: Previne que o cache vazio (novo dispositivo) sobrescreva a nuvem
         if (!isSimulated && snap && typeof snap.exists === 'function' && !snap.exists() && snap.metadata && snap.metadata.fromCache) {
             console.warn("Ignorando snapshot vazio do cache. Aguardando servidor para evitar sobrescrita de dados...");
             return;
         }
 
-        // B) Proteção dentro do callback: confirma que a migração continua liberada antes de qualquer processamento ou gravação
         if (window.isFirestoreSyncMigrationBlocked || !isolateLegacyAccountDataInLocalStorage(storageAdapter)) {
           window.isFirestoreSyncMigrationBlocked = true;
           stopListenerSafely();
@@ -21344,118 +21350,45 @@ service cloud.firestore {
           return;
         }
 
-        // Preserva alterações locais ainda não sincronizadas deste usuário e, se também houver dados na nuvem,
-        // mescla ambos preservando conflitos para nunca sobrescrever dados criados em outro aparelho.
-        const currentLocalEntry = loadUserLocalStore(uid, activeAuth?.currentUser?.email, storageAdapter);
-        if (window.isFirestoreSyncMigrationBlocked) {
-          stopListenerSafely();
-          console.warn("Snapshot bloqueado e sincronização interrompida: falha na verificação do armazenamento local.");
-          return;
-        }
-
-        if (currentLocalEntry && currentLocalEntry.hasUnsynced && currentLocalEntry.data) {
-          let dataToSync = currentLocalEntry.data;
-          if (!isSimulated && snap && typeof snap.exists === 'function' && snap.exists()) {
-            const cloudData = { ...snap.data(), ownerUid: uid };
-            const localSeq = Number(dataToSync._syncSeq) || 0;
-            const cloudSeq = Number(cloudData._syncSeq) || 0;
-            // Só faz merge de conflitos quando o documento da nuvem possui uma sequência mais nova ou de outro dispositivo;
-            // se o dado local já é evolução direta do documento da nuvem (localSeq >= cloudSeq > 0), preserva as exclusões/edições locais sem recriar itens apagados.
-            if (localSeq === 0 || cloudSeq > localSeq) {
-              const userKey = getUserStorageKey(uid);
-              const mergeRes = mergeLegacyAccountDataPreservingConflicts(dataToSync, cloudData, userKey, storageAdapter);
-              if (mergeRes && mergeRes.backupConfirmed) {
-                dataToSync = { ...mergeRes.mergedData, ownerUid: uid, isDemoDataset: false };
-                writeAndConfirmLocalStorage(userKey, JSON.stringify(dataToSync), storageAdapter);
-              }
-            }
-          }
-          window.cachedRealCloudData = dataToSync;
-          if (!isSimulated) {
-            window.isDemoMode = false;
-            window.isCloudAccountHydrated = true;
-            if (!isAnyEditingModalOpen()) {
-              window.appData = normalizeCloudData(dataToSync, activeAuth?.currentUser);
-              window.appData.ownerUid = uid;
-              onDataLoadedFromCloud();
-            }
-            if (!window._hasCheckedFormDraftAfterHydration) {
-              window._hasCheckedFormDraftAfterHydration = true;
-              restoreActiveFormDraftIfPresent();
-            }
-            const nextSeq = ++syncSequenceCounter;
-            latestRequestedSyncSeq = nextSeq;
-            
-            dataToSync._syncSeq = nextSeq;
-            
-            pendingSyncSnapshot = {
-              seq: nextSeq,
-              uid,
-              data: JSON.parse(JSON.stringify(dataToSync))
-            };
-            ensureFirestoreSyncLoopRunning();
-          }
-          return;
-        }
+        const userKey = getUserStorageKey(uid);
+        const currentLocalRaw = storageAdapter.getItem(userKey);
+        let currentLocalParsed = null;
+        try { currentLocalParsed = currentLocalRaw ? JSON.parse(currentLocalRaw) : null; } catch(e){}
+        const localSeq = currentLocalParsed ? (Number(currentLocalParsed._syncSeq) || 0) : 0;
 
         if (snap.exists()) {
-          // Confirmação final antes de gravar dados recebidos do Firestore no localStorage
-          if (window.isFirestoreSyncMigrationBlocked || !isolateLegacyAccountDataInLocalStorage(storageAdapter)) {
-            window.isFirestoreSyncMigrationBlocked = true;
-            stopListenerSafely();
+          let rawData = { ...snap.data(), ownerUid: uid };
+          const cloudSeq = Number(rawData._syncSeq) || 0;
+
+          if (localSeq > cloudSeq) {
+            console.warn(`Nuvem atrasada (Local: ${localSeq}, Nuvem: ${cloudSeq}). Protegendo dados locais.`);
+            if (currentLocalParsed) {
+              pendingSyncSnapshot = { seq: localSeq, uid, data: currentLocalParsed };
+              ensureFirestoreSyncLoopRunning();
+            }
             return;
           }
-          let rawData = { ...snap.data(), ownerUid: uid };
-          const userKey = getUserStorageKey(uid);
 
-          // Se havia itens criados antes do login em um navegador novo, mescla-os com os dados da nuvem sem perder nada
-          const latestPreLoginPayload = !isSimulated ? (deferredPreLoginPayload || extractUserCreatedPreLoginPayload(storageAdapter)) : null;
-          if (!isSimulated && latestPreLoginPayload) {
-            const mergeRes = mergeLegacyAccountDataPreservingConflicts(rawData, latestPreLoginPayload, userKey, storageAdapter);
+          if (localSeq > 0 && cloudSeq >= localSeq && currentLocalParsed) {
+            const mergeRes = mergeLegacyAccountDataPreservingConflicts(currentLocalParsed, rawData, userKey, storageAdapter);
             if (mergeRes && mergeRes.backupConfirmed) {
               rawData = { ...mergeRes.mergedData, ownerUid: uid, isDemoDataset: false };
-              deferredPreLoginPayload = null;
-              const freshDemo = normalizeCloudData(DEFAULT_CLOUD_DATA, null);
-              writeAndConfirmLocalStorage(DEMO_STORAGE_KEY, JSON.stringify(freshDemo), storageAdapter);
-              setUserUnsyncedFlag(uid, true);
-              const nextSeq = ++syncSequenceCounter;
-              latestRequestedSyncSeq = nextSeq;
-              
-              rawData._syncSeq = nextSeq;
-              
-              pendingSyncSnapshot = {
-                seq: nextSeq,
-                uid,
-                data: JSON.parse(JSON.stringify(rawData))
-              };
-              ensureFirestoreSyncLoopRunning();
             }
           }
 
           window.cachedRealCloudData = rawData;
-          try {
-            storageAdapter.setItem(userKey, JSON.stringify(rawData));
-          } catch (_) {}
+          try { storageAdapter.setItem(userKey, JSON.stringify(rawData)); } catch (_) {}
+          
           if (!isSimulated) {
             window.isDemoMode = false;
             window.isCloudAccountHydrated = true;
             lastConfirmedCloudSnapshotByUid[uid] = JSON.parse(JSON.stringify(rawData));
-            const cloudSeq = Number(rawData._syncSeq) || 1;
-            const currentAppSeq = Number(window.appData?._syncSeq) || 0;
             if (cloudSeq > (latestCompletedSyncSeqByUid[uid] || 0)) {
               latestCompletedSyncSeqByUid[uid] = cloudSeq;
             }
-            flushConfirmedStorageImageCleanups(
-              uid,
-              latestCompletedSyncSeqByUid[uid],
-              lastConfirmedCloudSnapshotByUid[uid],
-              storageAdapter
-            );
-            // Evita re-renderizar a tela inteira quando o snapshot recebido é apenas o eco da sequência já em tela
-            // ou enquanto o usuário estiver digitando dentro de um modal aberto
-            if (window.hasCompletedInitialRender && window.appData?.ownerUid === uid && cloudSeq > 0 && cloudSeq === currentAppSeq) {
-              updateDemoModeBadgesUI();
-            } else if (isAnyEditingModalOpen()) {
+            flushConfirmedStorageImageCleanups(uid, latestCompletedSyncSeqByUid[uid], lastConfirmedCloudSnapshotByUid[uid], storageAdapter);
+            
+            if (isAnyEditingModalOpen()) {
               window._deferredCloudSnapshotToApply = { uid, rawData };
             } else {
               window._deferredCloudSnapshotToApply = null;
@@ -21468,36 +21401,39 @@ service cloud.firestore {
               restoreActiveFormDraftIfPresent();
             }
           }
-        } else if (!isSimulated) {
-          window.isDemoMode = false;
-          window.isCloudAccountHydrated = true;
-          const latestPreLoginPayload = deferredPreLoginPayload || extractUserCreatedPreLoginPayload(storageAdapter);
-          if (latestPreLoginPayload) {
-            const userKey = getUserStorageKey(uid);
-            const cleanBase = normalizeCloudData(buildCleanWorkspaceDataset(), activeAuth?.currentUser);
-            const mergeRes = mergeLegacyAccountDataPreservingConflicts(cleanBase, latestPreLoginPayload, userKey, storageAdapter);
-            const finalFirstCloudData = (mergeRes && mergeRes.mergedData) ? mergeRes.mergedData : cleanBase;
-            finalFirstCloudData.ownerUid = uid;
-            finalFirstCloudData.isDemoDataset = false;
-            deferredPreLoginPayload = null;
-            writeAndConfirmLocalStorage(userKey, JSON.stringify(finalFirstCloudData), storageAdapter);
-            const freshDemo = normalizeCloudData(DEFAULT_CLOUD_DATA, null);
-            writeAndConfirmLocalStorage(DEMO_STORAGE_KEY, JSON.stringify(freshDemo), storageAdapter);
-            window.appData = normalizeCloudData(finalFirstCloudData, activeAuth?.currentUser);
-            window.appData.ownerUid = uid;
-            await window.saveState();
-          } else {
-            const userKey = getUserStorageKey(uid);
-            const cleanBase = buildCleanWorkspaceDataset();
-            window.appData = normalizeCloudData(cleanBase, activeAuth?.currentUser);
-            window.appData.ownerUid = uid;
-            writeAndConfirmLocalStorage(userKey, JSON.stringify(window.appData), storageAdapter);
-            await window.saveState();
-          }
-          onDataLoadedFromCloud();
-          if (!window._hasCheckedFormDraftAfterHydration) {
-            window._hasCheckedFormDraftAfterHydration = true;
-            restoreActiveFormDraftIfPresent();
+        } else {
+          if (!isSimulated) {
+            window.isDemoMode = false;
+            window.isCloudAccountHydrated = true;
+            
+            if (currentLocalParsed && localSeq > 0) {
+              pendingSyncSnapshot = { seq: localSeq, uid, data: currentLocalParsed };
+              ensureFirestoreSyncLoopRunning();
+            } else {
+              const latestPreLoginPayload = deferredPreLoginPayload || extractUserCreatedPreLoginPayload(storageAdapter);
+              let finalFirstCloudData;
+              if (latestPreLoginPayload) {
+                const cleanBase = normalizeCloudData(buildCleanWorkspaceDataset(), activeAuth?.currentUser);
+                const mergeRes = mergeLegacyAccountDataPreservingConflicts(cleanBase, latestPreLoginPayload, userKey, storageAdapter);
+                finalFirstCloudData = (mergeRes && mergeRes.mergedData) ? mergeRes.mergedData : cleanBase;
+                deferredPreLoginPayload = null;
+                const freshDemo = normalizeCloudData(DEFAULT_CLOUD_DATA, null);
+                writeAndConfirmLocalStorage(DEMO_STORAGE_KEY, JSON.stringify(freshDemo), storageAdapter);
+              } else {
+                finalFirstCloudData = buildCleanWorkspaceDataset();
+              }
+              finalFirstCloudData.ownerUid = uid;
+              finalFirstCloudData.isDemoDataset = false;
+              writeAndConfirmLocalStorage(userKey, JSON.stringify(finalFirstCloudData), storageAdapter);
+              window.appData = normalizeCloudData(finalFirstCloudData, activeAuth?.currentUser);
+              window.appData.ownerUid = uid;
+              await window.saveState();
+            }
+            onDataLoadedFromCloud();
+            if (!window._hasCheckedFormDraftAfterHydration) {
+              window._hasCheckedFormDraftAfterHydration = true;
+              restoreActiveFormDraftIfPresent();
+            }
           }
         }
       };
