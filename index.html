@@ -620,7 +620,7 @@
           <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 soft-card">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <div class="flex items-center gap-2 cursor-pointer select-none inline-flex hover:opacity-80 transition" onclick="toggleFinHistoricalGoals()">
+                <div class="flex items-center gap-2 cursor-pointer select-none inline-flex hover:opacity-80 transition" onclick="window.toggleFinHistoricalGoals()">
                   <span id="finGoalTitle" class="text-xs font-bold uppercase dynamic-text">Meta Financeira Mensal</span>
                   <i id="finHistoricalGoalsIcon" class="fa-solid fa-chevron-down text-[11px] text-slate-400 transition-transform"></i>
                 </div>
@@ -629,7 +629,7 @@
                   <span class="text-slate-500 text-sm font-medium">de <span id="finGoalTarget">R$ 1.000,00</span></span>
                 </div>
               </div>
-              <button type="button" onclick="openEditGoalModal()" id="btnEditGoal" class="px-4 py-2 text-white text-xs font-bold rounded-xl shadow transition">
+              <button type="button" onclick="window.openEditGoalModal()" id="btnEditGoal" class="px-4 py-2 text-white text-xs font-bold rounded-xl shadow transition">
                 Editar Meta
               </button>
             </div>
@@ -993,12 +993,12 @@
                 <div class="flex items-center gap-2 flex-wrap">
                   <!-- Alternador: Biblioteca Ativa vs Histórico de Conteúdos Concluídos -->
                   <div class="inline-flex items-center bg-slate-100 dark:bg-slate-700/70 p-1 rounded-xl border border-slate-200/80 dark:border-slate-600">
-                    <button type="button" id="btnMuralTabActive" onclick="setMuralViewMode('active')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm flex items-center gap-1.5">
+                    <button type="button" id="btnMuralTabActive" onclick="window.setMuralViewMode('active')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm flex items-center gap-1.5">
                       <i class="fa-solid fa-layer-group text-[10px]"></i>
                       <span>Biblioteca Ativa</span>
                       <span id="muralActiveItemsCountBadge" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">0</span>
                     </button>
-                    <button type="button" id="btnMuralTabCompleted" onclick="setMuralViewMode('completed')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5">
+                    <button type="button" id="btnMuralTabCompleted" onclick="window.setMuralViewMode('completed')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5">
                       <i class="fa-solid fa-clock-rotate-left text-[10px]"></i>
                       <span>Histórico de Concluídos</span>
                       <span id="muralCompletedItemsCountBadge" class="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">0</span>
@@ -1292,8 +1292,11 @@
                   Remova os itens de exemplo para começar seu painel limpo do zero ou restaure os dados demonstrativos quando quiser testar.
                 </p>
                 <div class="flex flex-wrap items-center gap-2 pt-1">
-                  <button type="button" onclick="requestClearDemoDatasetModal()" class="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-broom text-[11px]"></i> Limpar demonstração (Começar do zero)
+                  <button type="button" onclick="requestClearDemoDatasetModal()" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-broom text-[11px]"></i> Limpar demonstração
+                  </button>
+                  <button type="button" onclick="factoryResetApp()" class="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-triangle-exclamation text-[11px]"></i> Zerar Conta (Apagar Tudo)
                   </button>
                   <button type="button" onclick="requestRestoreDemoDatasetModal()" class="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-1.5">
                     <i class="fa-solid fa-rotate-left text-[11px]"></i> Restaurar demonstração
@@ -1319,11 +1322,11 @@
       </div>
       <div>
         <label class="block text-xs font-bold mb-1">Nova Meta (R$)</label>
-        <input type="number" id="inputNewGoalValue" onkeydown="if(event.key==='Enter'){event.preventDefault();saveNewGoalValue();}" step="0.01" class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl font-bold">
+        <input type="number" id="inputNewGoalValue" onkeydown="if(event.key==='Enter'){event.preventDefault();window.saveNewGoalValue();}" step="0.01" class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl font-bold">
       </div>
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" onclick="closeModal('modalEditGoal')" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition">Cancelar</button>
-        <button type="button" id="btnSaveGoalModal" onclick="saveNewGoalValue()" class="px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs rounded-xl shadow transition">Salvar</button>
+        <button type="button" id="btnSaveGoalModal" onclick="window.saveNewGoalValue()" class="px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs rounded-xl shadow transition">Salvar</button>
       </div>
     </div>
   </div>
@@ -2677,6 +2680,75 @@ service cloud.firestore {
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- Modal: Personalizar Cor da Tarefa (Faltante) -->
+  <div id="modalTaskColorPicker" class="fixed inset-0 z-[75] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+          <i class="fa-solid fa-palette text-violet-500"></i> Cor da Tarefa
+        </h3>
+        <button type="button" onclick="cancelTaskColorPickerModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Preview -->
+      <div class="space-y-1.5">
+        <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Pré-visualização</span>
+        <div id="taskColorPreviewCard" class="p-3 rounded-xl border transition-colors duration-200" style="background-color: #FFFFFF; border-color: #E2E8F0;">
+          <p id="taskColorPreviewTitle" class="font-semibold text-xs leading-snug break-words" style="color: #1E293B;">Exemplo de Tarefa</p>
+        </div>
+      </div>
+
+      <!-- Preset Colors -->
+      <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Cor</span>
+          <div class="flex items-center gap-2">
+            <span id="taskColorHexLabel" class="text-[11px] font-mono font-bold text-slate-400">Padrão</span>
+            <button type="button" onclick="toggleCustomColorSlidersPanel()" class="text-xs font-bold dynamic-text hover:underline">Personalizar</button>
+          </div>
+        </div>
+        <div id="taskPresetColorsGrid" class="grid grid-cols-5 gap-2"></div>
+      </div>
+
+      <!-- Custom Sliders Box -->
+      <div id="taskCustomColorSlidersBox" class="hidden p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-800 dark:text-slate-100">Seletor de cor</span>
+          <input type="color" id="taskColorNativeInput" oninput="onTaskNativeColorInput(this.value)" class="w-8 h-8 rounded cursor-pointer border-0 bg-transparent">
+        </div>
+        <div class="space-y-1">
+          <div class="flex justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300"><span>Matiz</span><span id="taskColorHueValue">210°</span></div>
+          <input type="range" id="taskColorHueSlider" min="0" max="360" oninput="onTaskHslSliderChange()" class="w-full">
+        </div>
+        <div class="space-y-1">
+          <div class="flex justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300"><span>Saturação</span><span id="taskColorSatValue">20%</span></div>
+          <input type="range" id="taskColorSatSlider" min="0" max="100" oninput="onTaskHslSliderChange()" class="w-full">
+        </div>
+        <div class="space-y-1">
+          <div class="flex justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300"><span>Luminosidade</span><span id="taskColorLightValue">90%</span></div>
+          <input type="range" id="taskColorLightSlider" min="15" max="95" oninput="onTaskHslSliderChange()" class="w-full">
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700">
+        <button type="button" onclick="resetTaskCardColorToDefault()" class="text-xs font-bold text-slate-500 hover:underline">Restaurar Padrão</button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="cancelTaskColorPickerModal()" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">Cancelar</button>
+          <button type="button" id="btnConfirmTaskColor" onclick="confirmTaskColorPickerModal()" class="px-5 py-2 text-white font-bold text-xs rounded-xl shadow transition-all bg-slate-900 dark:bg-slate-100 dark:text-slate-900">Salvar Cor</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification (Faltante) -->
+  <div id="toastNotification" class="fixed bottom-6 right-6 z-[100] bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs font-bold flex items-center gap-3 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+    <span id="toastText"></span>
   </div>
 
   <!-- FIREBASE SDKS & APP LOGIC -->
@@ -10101,12 +10173,21 @@ service cloud.firestore {
         .filter(i => Boolean(i.isCompleted))
         .sort((a, b) => new Date(b.completedAt || b.updatedAt || 0) - new Date(a.completedAt || a.updatedAt || 0));
 
+      // CORREÇÃO: As badges agora contam exatamente os itens filtrados e visíveis
+      let visibleActiveCount = 0;
+      filteredCategories.forEach(cat => {
+          visibleActiveCount += activeItems.filter(item => item.categoryId === cat.id).length;
+      });
+      const filteredCompletedItems = completedItems.filter(item => {
+          const cat = categories.find(c => c.id === item.categoryId);
+          return cat ? doesMuralCategoryMatchFilter(cat) : doesMuralCategoryMatchFilter({ platform: item.targetPlatform || 'Todas' });
+      });
+
       const activeBadge = document.getElementById('muralActiveItemsCountBadge');
       const completedBadge = document.getElementById('muralCompletedItemsCountBadge');
-      const btnTabActive = document.getElementById('btnMuralTabActive');
-      const btnTabCompleted = document.getElementById('btnMuralTabCompleted');
-      if (activeBadge) activeBadge.innerText = String(activeItems.length);
-      if (completedBadge) completedBadge.innerText = String(completedItems.length);
+      
+      if (activeBadge) activeBadge.innerText = String(visibleActiveCount);
+      if (completedBadge) completedBadge.innerText = String(filteredCompletedItems.length);
 
       if (isSectionCollapsed) {
         container.innerHTML = '';
@@ -10141,10 +10222,6 @@ service cloud.firestore {
         container.classList.add('hidden', 'mural-collapsed');
         if (historyContainer) {
           historyContainer.classList.remove('hidden', 'mural-collapsed');
-          const filteredCompletedItems = completedItems.filter(item => {
-            const cat = categories.find(c => c.id === item.categoryId);
-            return cat ? doesMuralCategoryMatchFilter(cat) : true;
-          });
           if (filteredCompletedItems.length === 0) {
             historyContainer.innerHTML = `
               <div class="py-12 px-6 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 text-center flex flex-col items-center justify-center gap-3">
@@ -10161,7 +10238,7 @@ service cloud.firestore {
                 </div>
                 <div class="flex items-center gap-2 flex-wrap justify-center mt-1">
                   ${completedItems.length > 0 ? `<button type="button" onclick="window.toggleMuralFilterPlatform('Todas')" class="py-2 px-4 rounded-xl font-extrabold text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">Mostrar todas as categorias</button>` : ''}
-                  <button type="button" onclick="setMuralViewMode('active')" class="py-2 px-4 rounded-xl font-extrabold text-xs bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900">
+                  <button type="button" onclick="window.setMuralViewMode('active')" class="py-2 px-4 rounded-xl font-extrabold text-xs bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900">
                     Voltar para Biblioteca Ativa
                   </button>
                 </div>
@@ -11226,10 +11303,14 @@ service cloud.firestore {
       window.closeAllTaskCardMenus();
       const target = (window.appData.tasks || []).find(t => t.id === taskId);
       if (!target) return;
-      window.pendingDeleteTaskId = taskId;
-      const titleEl = document.getElementById('confirmDeleteTaskTitle');
-      if (titleEl) titleEl.innerText = `"${target.text || 'Tarefa'}"`;
-      document.getElementById('modalConfirmDeleteTask').classList.remove('hidden');
+      
+      window.openGenericConfirmDeleteModal({
+        title: 'Excluir Tarefa',
+        message: `Tem certeza que deseja excluir a tarefa <strong>"${escapeHtmlText(target.text || 'Tarefa')}"</strong>?`,
+        onConfirm: async () => {
+          await window.deleteTask(taskId);
+        }
+      });
     };
 
     window.cancelDeleteTaskModal = function() {
@@ -12425,12 +12506,15 @@ service cloud.firestore {
           const nextActiveIdx = Math.max(0, activeIdx - 1);
           window.appData.activePlanningWeekId = window.appData.planningWeeks[nextActiveIdx].id;
           window.currentPlanningStartDate = planningParseISO(window.appData.planningWeeks[nextActiveIdx].startDate);
+          window.planningVisibleStartIndex = 0;
           
           (window.appData.tasks || []).forEach(t => {
             if (t.weekId === activeId) {
               t.status = 'banco';
               t.date = null;
               t.weekId = null;
+              t.fixed = false;
+              t.fixedSeriesId = null;
             }
           });
           
@@ -12444,6 +12528,7 @@ service cloud.firestore {
           }
           window.closeModal('modalPlanningPeriod');
           window.renderCalendarView();
+          updateDashboardData();
           window.showToast('Semana excluída com sucesso!');
         }
       });
@@ -12888,40 +12973,30 @@ service cloud.firestore {
       }
       const base = JSON.parse(JSON.stringify(DEFAULT_CLOUD_DATA));
       if (!raw || typeof raw !== 'object') {
-        if (authUser?.email) base.user.email = authUser.email;
+        if (authUser?.email) {
+          const cleanBase = buildCleanWorkspaceDataset();
+          cleanBase.user.email = authUser.email;
+          return cleanBase;
+        }
         return base;
       }
 
-      const isAccidentalEmptyState =
-        !raw.userExplicitlyClearedDemo &&
-        !raw.isImportedBackup &&
-        !raw.isCleanLocalWorkspace &&
-        (!Array.isArray(raw.products) || raw.products.length === 0) &&
-        (!Array.isArray(raw.sales) || raw.sales.length === 0) &&
-        (!Array.isArray(raw.tasks) || raw.tasks.length === 0) &&
-        (!Array.isArray(raw.contentMuralItems) || raw.contentMuralItems.length === 0);
+      const isRealAccount = raw.isDemoDataset === false || raw.isCleanLocalWorkspace === true || Boolean(authUser);
+      const fallback = isRealAccount ? buildCleanWorkspaceDataset() : base;
 
-      if (isAccidentalEmptyState) {
-        if (authUser?.email) base.user.email = authUser.email;
-        else if (raw.user?.email) base.user.email = raw.user.email;
-        if (raw.user?.name) base.user.name = raw.user.name;
-        if (typeof raw.user?.monthlyGoal === 'number') base.user.monthlyGoal = raw.user.monthlyGoal;
-        return base;
-      }
-
-      const rawProds = Array.isArray(raw.products) ? raw.products : base.products;
-      const rawSales = Array.isArray(raw.sales) ? raw.sales : base.sales;
-      const rawTasks = Array.isArray(raw.tasks) ? raw.tasks : base.tasks;
-      const rawIdeas = Array.isArray(raw.ideas) ? raw.ideas : base.ideas;
+      const rawProds = Array.isArray(raw.products) ? raw.products : fallback.products;
+      const rawSales = Array.isArray(raw.sales) ? raw.sales : fallback.sales;
+      const rawTasks = Array.isArray(raw.tasks) ? raw.tasks : fallback.tasks;
+      const rawIdeas = Array.isArray(raw.ideas) ? raw.ideas : fallback.ideas;
 
       const normalizedPlatformSettings = {
         ...(raw.platformSettings && typeof raw.platformSettings === 'object' ? raw.platformSettings : {}),
         sales: {
-          ...base.platformSettings.sales,
+          ...fallback.platformSettings.sales,
           ...(raw.platformSettings && raw.platformSettings.sales && typeof raw.platformSettings.sales === 'object' ? raw.platformSettings.sales : {})
         },
         disclosure: {
-          ...base.platformSettings.disclosure,
+          ...fallback.platformSettings.disclosure,
           ...(raw.platformSettings && raw.platformSettings.disclosure && typeof raw.platformSettings.disclosure === 'object' ? raw.platformSettings.disclosure : {})
         },
         deletedSales: Array.isArray(raw.platformSettings?.deletedSales) ? raw.platformSettings.deletedSales.filter(Boolean) : [],
@@ -13040,15 +13115,15 @@ service cloud.firestore {
         platformSettings: normalizedPlatformSettings,
         customSalesPlatforms: Array.isArray(raw.customSalesPlatforms) ? raw.customSalesPlatforms.filter(Boolean) : [],
         user: {
-          ...base.user,
+          ...fallback.user,
           ...(raw.user && typeof raw.user === 'object' ? raw.user : {}),
-          name: stripDemoLabel((raw.user && raw.user.name) ? raw.user.name : base.user.name) || 'Dudu'
+          name: stripDemoLabel((raw.user && raw.user.name) ? raw.user.name : fallback.user.name) || 'Afiliado'
         },
-        activePlatform: typeof raw.activePlatform === 'string' && raw.activePlatform ? raw.activePlatform : base.activePlatform,
+        activePlatform: typeof raw.activePlatform === 'string' && raw.activePlatform ? raw.activePlatform : fallback.activePlatform,
         activePlanningWeekId: resolvedActiveWeekId,
         planningWeeks: normalizedWeeks,
-        categories: Array.isArray(raw.categories) ? raw.categories : base.categories,
-        taskCategories: Array.isArray(raw.taskCategories) ? raw.taskCategories : base.taskCategories,
+        categories: Array.isArray(raw.categories) ? raw.categories : fallback.categories,
+        taskCategories: Array.isArray(raw.taskCategories) ? raw.taskCategories : fallback.taskCategories,
         taskCategoryIcons: (raw.taskCategoryIcons && typeof raw.taskCategoryIcons === 'object') ? { ...raw.taskCategoryIcons } : {},
         contentMuralCategories: normalizedMuralCategories,
         contentMuralItems: Array.isArray(raw.contentMuralItems)
@@ -13108,7 +13183,7 @@ service cloud.firestore {
                 name: stripDemoLabel(acc?.name || 'Conta') || 'Conta',
                 createdAt: acc?.createdAt || new Date().toISOString()
               }))
-          : base.publishingAccounts,
+          : fallback.publishingAccounts,
         customTargetPlatforms: Array.isArray(raw.customTargetPlatforms)
           ? raw.customTargetPlatforms.filter(p => p && String(p).toLowerCase() !== 'tiktok shop')
           : [],
@@ -13144,7 +13219,7 @@ service cloud.firestore {
               createdAt: pub?.createdAt || new Date().toISOString()
             }))
           : [],
-        origins: Array.isArray(raw.origins) ? raw.origins : base.origins,
+        origins: Array.isArray(raw.origins) ? raw.origins : fallback.origins,
         withdrawals: Array.isArray(raw.withdrawals) ? raw.withdrawals : [],
         products: rawProds.map(p => ({
           ...p,
@@ -16370,11 +16445,32 @@ service cloud.firestore {
 
     function buildCleanWorkspaceDataset() {
       const base = buildCompleteDemoDataset();
+
+      // Coleta todos os formatos padrão para ocultá-los na base limpa real
+      const allDefaultFormats = [];
+      Object.entries(TARGET_PLATFORM_FORMATS_MAP).forEach(([plat, fmts]) => {
+        fmts.forEach(fmt => {
+          allDefaultFormats.push({ name: fmt, platform: plat === 'default' ? 'Todas' : plat });
+        });
+      });
+
       return {
         ...base,
         isDemoDataset: false,
         isCleanLocalWorkspace: true,
         userExplicitlyClearedDemo: true,
+        user: {
+          name: '',
+          email: '',
+          monthlyGoal: 0,
+          historicalGoals: {}
+        },
+        origins: [],
+        categories: [],
+        taskCategories: ["Geral"],
+        taskCategoryIcons: {},
+        planningWeeks: [],
+        notifications: [],
         products: [],
         sales: [],
         tasks: [],
@@ -16382,7 +16478,9 @@ service cloud.firestore {
         contentMuralItems: [],
         publishingAccounts: [],
         customContentFormats: [],
-        productPublications: []
+        removedContentFormats: allDefaultFormats,
+        productPublications: [],
+        withdrawals: []
       };
     }
 
@@ -16805,6 +16903,36 @@ service cloud.firestore {
       clearActiveFormDraft();
       onDataLoadedFromCloud();
       window.showToast("Itens de demonstração removidos com segurança (seus cadastros foram preservados)!");
+    };
+
+    window.factoryResetApp = async function() {
+      window.openGenericConfirmDeleteModal({
+        title: 'Zerar Conta (Apagar Tudo)',
+        message: 'Tem certeza ABSOLUTA que deseja <strong>apagar TODOS os seus dados reais</strong> (produtos, vendas, tarefas, conteúdos, metas e plataformas)?',
+        impact: 'Esta ação é <strong>IRREVERSÍVEL</strong>. Seu aplicativo voltará ao estado de fábrica, 100% vazio.',
+        confirmText: 'Sim, apagar TUDO',
+        onConfirm: async () => {
+          const prevUser = window.appData.user;
+          const prevOwnerUid = window.appData.ownerUid;
+          
+          const cleanBase = buildCleanWorkspaceDataset();
+          cleanBase.user = prevUser;
+          cleanBase.ownerUid = prevOwnerUid;
+          
+          window.appData = normalizeCloudData(cleanBase, auth?.currentUser);
+          if (prevOwnerUid) {
+            window.appData.ownerUid = prevOwnerUid;
+          }
+          
+          const saved = await window.saveState();
+          if (saved) {
+            window.showToast("Sua conta foi completamente zerada!");
+            setTimeout(() => window.location.reload(), 1500);
+          } else {
+            window.showToast("Erro ao zerar a conta.", true);
+          }
+        }
+      });
     };
 
     window.switchToRealCloudWorkspace = async function() {
@@ -18414,8 +18542,8 @@ service cloud.firestore {
       const elSumPendentes = document.getElementById('sumPendentes');
       if (elSumPendentes) elSumPendentes.innerText = window.formatCurrency(pend).replace('R$', '');
 
-      const goal = window.appData.user?.monthlyGoal || 1000;
-      const pct = Math.min(Math.round((aprov / goal) * 100), 100);
+      const goal = window.appData.user?.monthlyGoal ?? 1000;
+      const pct = goal > 0 ? Math.min(Math.round((aprov / goal) * 100), 100) : (aprov > 0 ? 100 : 0);
       
       const elDashMetaTotal = document.getElementById('dashMetaTotal');
       if (elDashMetaTotal) elDashMetaTotal.innerText = window.formatCurrency(goal);
@@ -18602,8 +18730,8 @@ service cloud.firestore {
         }
       });
 
-      const goal = window.appData.user?.monthlyGoal || 1000;
-      const pct = Math.min(Math.round((monthlyConquistado / goal) * 100), 100);
+      const goal = window.appData.user?.monthlyGoal ?? 1000;
+      const pct = goal > 0 ? Math.min(Math.round((monthlyConquistado / goal) * 100), 100) : (monthlyConquistado > 0 ? 100 : 0);
 
       const elCur = document.getElementById('finGoalCurrent');
       const elTar = document.getElementById('finGoalTarget');
@@ -20156,13 +20284,20 @@ service cloud.firestore {
     };
 
     window.openEditGoalModal = function() {
-      document.getElementById('inputNewGoalValue').value = window.appData.user?.monthlyGoal || 1000;
-      document.getElementById('modalEditGoal').classList.remove('hidden');
+      const userObj = window.appData && window.appData.user ? window.appData.user : {};
+      const goal = userObj.monthlyGoal ?? 1000;
+      const inputEl = document.getElementById('inputNewGoalValue');
+      if (inputEl) inputEl.value = goal;
+      const modalEl = document.getElementById('modalEditGoal');
+      if (modalEl) modalEl.classList.remove('hidden');
     };
 
     window.saveNewGoalValue = async function() {
-      const val = parseFloat(document.getElementById('inputNewGoalValue').value) || 1000;
-      const prevGoal = window.appData.user?.monthlyGoal || 1000;
+      const inputEl = document.getElementById('inputNewGoalValue');
+      if (!inputEl) return;
+      let val = parseFloat(inputEl.value);
+      if (isNaN(val)) val = 1000;
+      const prevGoal = window.appData.user?.monthlyGoal ?? 1000;
       if (!window.appData.user) window.appData.user = {};
       
       const now = new Date();
@@ -20264,10 +20399,10 @@ service cloud.firestore {
         const mLabel = dateObj.toLocaleDateString('pt-BR', { month: 'long' });
         
         let mGoal = window.appData.user?.historicalGoals?.[mKey];
-        if (!mGoal) mGoal = window.appData.user?.monthlyGoal || 1000;
+        if (mGoal === undefined || mGoal === null) mGoal = window.appData.user?.monthlyGoal ?? 1000;
         
         const mComm = monthlyStats[mKey]?.comm || 0;
-        const mPct = Math.round((mComm / mGoal) * 100);
+        const mPct = mGoal > 0 ? Math.round((mComm / mGoal) * 100) : (mComm > 0 ? 100 : 0);
         
         return `
           <div class="break-inside-avoid mb-2.5 flex justify-between items-center bg-slate-50 dark:bg-slate-700/40 border border-slate-100 dark:border-slate-700 rounded-xl p-2.5 px-3">
@@ -21441,13 +21576,31 @@ service cloud.firestore {
       const onSnapshotError = (err) => {
         console.error("Erro na sincronização com o Firestore:", err);
         const loader = document.getElementById('globalAppLoader');
-        if (loader) {
+        if (loader && !loader.classList.contains('hidden')) {
           loader.style.opacity = '0';
           setTimeout(() => loader.classList.add('hidden'), 500);
         }
         if (err.code === 'permission-denied') {
           const modal = document.getElementById('modalFirebaseRulesError');
           if (modal) modal.classList.remove('hidden');
+        }
+        
+        // Em caso de erro e se a conta ainda não foi hidratada, tenta carregar o cache local
+        if (!window.isCloudAccountHydrated && uid) {
+          const localEntry = loadUserLocalStore(uid, activeAuth?.currentUser?.email, storageAdapter);
+          if (localEntry && localEntry.data) {
+            window.appData = normalizeCloudData(localEntry.data, activeAuth?.currentUser);
+            window.appData.ownerUid = uid;
+          } else {
+            window.appData = normalizeCloudData(buildCleanWorkspaceDataset(), activeAuth?.currentUser);
+            window.appData.ownerUid = uid;
+          }
+          window.isDemoMode = false;
+          onDataLoadedFromCloud();
+          if (!window._hasCheckedFormDraftAfterHydration) {
+            window._hasCheckedFormDraftAfterHydration = true;
+            restoreActiveFormDraftIfPresent();
+          }
         }
       };
 
@@ -21499,7 +21652,46 @@ service cloud.firestore {
           }
           document.getElementById('authOverlay').classList.add('hidden');
           
-          setupFirestoreSync(user.uid);
+          const syncStarted = setupFirestoreSync(user.uid);
+
+          let initialLoadTimeout = setTimeout(() => {
+            if (!window.isCloudAccountHydrated) {
+              if (loader && !loader.classList.contains('hidden')) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.classList.add('hidden'), 500);
+              }
+              window.showToast("Conexão lenta ou offline. Carregando dados locais da sua conta...", true);
+              
+              const localEntry = loadUserLocalStore(user.uid, user.email, localStorage);
+              if (localEntry && localEntry.data) {
+                window.appData = normalizeCloudData(localEntry.data, user);
+                window.appData.ownerUid = user.uid;
+              } else {
+                window.appData = normalizeCloudData(buildCleanWorkspaceDataset(), user);
+                window.appData.ownerUid = user.uid;
+              }
+              window.isDemoMode = false;
+              onDataLoadedFromCloud();
+              if (!window._hasCheckedFormDraftAfterHydration) {
+                window._hasCheckedFormDraftAfterHydration = true;
+                restoreActiveFormDraftIfPresent();
+              }
+            }
+          }, 5000);
+
+          if (!syncStarted) {
+            clearTimeout(initialLoadTimeout);
+            if (loader) {
+              loader.style.opacity = '0';
+              setTimeout(() => loader.classList.add('hidden'), 500);
+            }
+            window.showToast("Atenção: Falha de sincronização. O aplicativo funcionará offline com os dados locais.", true);
+            onDataLoadedFromCloud();
+            if (!window._hasCheckedFormDraftAfterHydration) {
+              window._hasCheckedFormDraftAfterHydration = true;
+              restoreActiveFormDraftIfPresent();
+            }
+          }
         } else {
           if (unsubscribeFirestore) {
             unsubscribeFirestore();
@@ -21564,6 +21756,23 @@ service cloud.firestore {
         e.returnValue = '';
       }
     });
+
+    window.addEventListener('online', () => {
+      if (currentUserId && auth && auth.currentUser && (!unsubscribeFirestore || window.lastSaveStatus === 'cloud_error')) {
+        setupFirestoreSync(currentUserId);
+        if (window.lastSaveStatus === 'cloud_error') window.saveState();
+      }
+    });
+    
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && navigator.onLine && currentUserId && auth && auth.currentUser) {
+        if (!unsubscribeFirestore || window.lastSaveStatus === 'cloud_error') {
+          setupFirestoreSync(currentUserId);
+          if (window.lastSaveStatus === 'cloud_error') window.saveState();
+        }
+      }
+    });
+
     initializeAppAuthAndSync();
   });
   </script>
