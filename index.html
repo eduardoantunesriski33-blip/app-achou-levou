@@ -12285,6 +12285,15 @@ service cloud.firestore {
     let _testFirestoreSetDocInterceptor = null;
     let _testSaveStateTimeoutMs = 4000;
 
+    window.updateGlobalSyncSequence = function(seq) {
+      const num = Number(seq);
+      if (Number.isFinite(num) && num > syncSequenceCounter) {
+        syncSequenceCounter = num;
+        if (latestRequestedSyncSeq < syncSequenceCounter) latestRequestedSyncSeq = syncSequenceCounter;
+        if (latestCompletedSyncSeq < syncSequenceCounter) latestCompletedSyncSeq = syncSequenceCounter;
+      }
+    };
+
     // ================= PLANNING UTILITIES =================
     function planningDateToISO(d) {
       if (!d || isNaN(d.getTime())) return '';
@@ -12869,6 +12878,9 @@ service cloud.firestore {
     window.lastCloudSyncSuccess = false;
 
     function normalizeCloudData(raw, authUser) {
+      if (raw && raw._syncSeq && typeof window.updateGlobalSyncSequence === 'function') {
+        window.updateGlobalSyncSequence(raw._syncSeq);
+      }
       const base = JSON.parse(JSON.stringify(DEFAULT_CLOUD_DATA));
       if (!raw || typeof raw !== 'object') {
         if (authUser?.email) base.user.email = authUser.email;
@@ -14364,6 +14376,10 @@ service cloud.firestore {
         if (!areAccountPayloadsCompatible(parsed, parsed, uid, normEmail)) {
           window.isFirestoreSyncMigrationBlocked = true;
           return null;
+        }
+
+        if (parsed._syncSeq && typeof window.updateGlobalSyncSequence === 'function') {
+          window.updateGlobalSyncSequence(parsed._syncSeq);
         }
 
         window.isFirestoreSyncMigrationBlocked = false;
@@ -21369,6 +21385,9 @@ service cloud.firestore {
             }
             const nextSeq = ++syncSequenceCounter;
             latestRequestedSyncSeq = nextSeq;
+            
+            dataToSync._syncSeq = nextSeq;
+            
             pendingSyncSnapshot = {
               seq: nextSeq,
               uid,
@@ -21401,6 +21420,9 @@ service cloud.firestore {
               setUserUnsyncedFlag(uid, true);
               const nextSeq = ++syncSequenceCounter;
               latestRequestedSyncSeq = nextSeq;
+              
+              rawData._syncSeq = nextSeq;
+              
               pendingSyncSnapshot = {
                 seq: nextSeq,
                 uid,
