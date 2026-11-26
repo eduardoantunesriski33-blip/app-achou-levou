@@ -13157,7 +13157,10 @@ service cloud.firestore {
         activePlatform: typeof raw.activePlatform === 'string' && raw.activePlatform ? raw.activePlatform : fallback.activePlatform,
         activePlanningWeekId: resolvedActiveWeekId,
         planningWeeks: normalizedWeeks,
-        categories: (Array.isArray(raw.categories) ? raw.categories : fallback.categories).filter(c => !["Roupas", "Calçados", "Acessórios", "Casa", "Eletrodomésticos", "Beleza", "do."].includes(c)),
+        categories: (Array.isArray(raw.categories) ? raw.categories : fallback.categories).filter(c => {
+          const zumbis = ['roupas', 'calçados', 'do.', 'acessórios', 'casa', 'eletrodomésticos', 'beleza'];
+          return !zumbis.includes(String(c).toLowerCase().trim());
+        }),
         taskCategories: Array.isArray(raw.taskCategories) ? raw.taskCategories : fallback.taskCategories,
         taskCategoryIcons: (raw.taskCategoryIcons && typeof raw.taskCategoryIcons === 'object') ? { ...raw.taskCategoryIcons } : {},
         contentMuralCategories: normalizedMuralCategories,
@@ -21717,24 +21720,27 @@ service cloud.firestore {
             }
           }
 
-          window.cachedRealCloudData = rawData;
-          try { storageAdapter.setItem(userKey, JSON.stringify(rawData)); } catch (_) {}
+          // Higieniza os dados cruamente recebidos ANTES de salvar localmente
+          const sanitizedCloudData = normalizeCloudData(rawData, activeAuth?.currentUser);
+          sanitizedCloudData.ownerUid = uid;
+
+          window.cachedRealCloudData = sanitizedCloudData;
+          try { storageAdapter.setItem(userKey, JSON.stringify(sanitizedCloudData)); } catch (_) {}
           
           if (!isSimulated) {
             window.isDemoMode = false;
             window.isCloudAccountHydrated = true;
-            lastConfirmedCloudSnapshotByUid[uid] = JSON.parse(JSON.stringify(rawData));
+            lastConfirmedCloudSnapshotByUid[uid] = JSON.parse(JSON.stringify(sanitizedCloudData));
             if (cloudSeq > (latestCompletedSyncSeqByUid[uid] || 0)) {
               latestCompletedSyncSeqByUid[uid] = cloudSeq;
             }
             flushConfirmedStorageImageCleanups(uid, latestCompletedSyncSeqByUid[uid], lastConfirmedCloudSnapshotByUid[uid], storageAdapter);
             
             if (isAnyEditingModalOpen()) {
-              window._deferredCloudSnapshotToApply = { uid, rawData };
+              window._deferredCloudSnapshotToApply = { uid, rawData: sanitizedCloudData };
             } else {
               window._deferredCloudSnapshotToApply = null;
-              window.appData = normalizeCloudData(rawData, activeAuth?.currentUser);
-              window.appData.ownerUid = uid;
+              window.appData = sanitizedCloudData;
               onDataLoadedFromCloud();
             }
             if (!window._hasCheckedFormDraftAfterHydration) {
