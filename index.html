@@ -14153,10 +14153,7 @@ service cloud.firestore {
       const stringArrayKeys = ['categories', 'taskCategories', 'origins', 'customSalesPlatforms', 'customTargetPlatforms'];
       stringArrayKeys.forEach(k => {
         handledRootKeys.add(k);
-        if (k === 'categories') {
-          // Bloqueia a inserção de categorias antigas, preservando integralmente o array de destino (inclusive vazio)
-          if (!Array.isArray(merged[k])) merged[k] = [];
-        } else if (k in legacy || k in merged) {
+        if (k in legacy || k in merged) {
           merged[k] = mergeStringListUnique(merged[k], legacy[k]);
         }
       });
@@ -21992,17 +21989,23 @@ service cloud.firestore {
   <script>
     // EXTERMINADOR DE CACHE: Força a desinstalação de versões antigas presas no celular
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        let hasUpdates = false;
-        for(let registration of registrations) {
-          registration.unregister();
-          hasUpdates = true;
-        }
-        if (hasUpdates) {
-          console.log("Service Worker antigo destruído. Atualizando o app...");
-          window.location.reload(true);
-        }
-      });
+      try {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          let hasUpdates = false;
+          for(let registration of registrations) {
+            registration.unregister();
+            hasUpdates = true;
+          }
+          if (hasUpdates) {
+            console.log("Service Worker antigo destruído. Atualizando o app...");
+            window.location.reload(true);
+          }
+        }).catch(function(err) {
+          console.warn("Não foi possível acessar os Service Workers antigos (ambiente restrito):", err);
+        });
+      } catch (e) {
+        console.warn("Erro síncrono ao acessar Service Workers:", e);
+      }
 
       window.addEventListener('load', () => {
         try {
