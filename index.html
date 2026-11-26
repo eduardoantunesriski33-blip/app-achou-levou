@@ -11572,9 +11572,9 @@ service cloud.firestore {
       window.openTaskMenuId = null;
       window.isDraggingPlanningTask = false;
       const allTasks = Array.isArray(window.appData.tasks) ? window.appData.tasks : [];
-      const allCategories = Array.isArray(window.appData.taskCategories) && window.appData.taskCategories.length > 0
+      const allCategories = Array.isArray(window.appData.taskCategories)
         ? window.appData.taskCategories
-        : ['Geral', 'Conteúdo', 'Administrativo', 'Financeiro'];
+        : [];
       const bankVisual = getTaskBankVisualTheme(window.appData.activePlatform);
 
       const mainHeaderIcon = document.getElementById('planningMainHeaderIcon');
@@ -16903,15 +16903,15 @@ service cloud.firestore {
         ? prevAppData.planningWeeks
         : cleanBase.planningWeeks;
       cleanBase.activePlanningWeekId = prevAppData.activePlanningWeekId || cleanBase.activePlanningWeekId;
-      cleanBase.categories = (Array.isArray(prevAppData.categories) && prevAppData.categories.length > 0)
-        ? prevAppData.categories
-        : cleanBase.categories;
-      cleanBase.taskCategories = (Array.isArray(prevAppData.taskCategories) && prevAppData.taskCategories.length > 0)
-        ? prevAppData.taskCategories
-        : cleanBase.taskCategories;
-      cleanBase.origins = (Array.isArray(prevAppData.origins) && prevAppData.origins.length > 0)
-        ? prevAppData.origins
-        : cleanBase.origins;
+      cleanBase.categories = Array.isArray(prevAppData.categories)
+        ? [...prevAppData.categories]
+        : [];
+      cleanBase.taskCategories = Array.isArray(prevAppData.taskCategories)
+        ? [...prevAppData.taskCategories]
+        : [];
+      cleanBase.origins = Array.isArray(prevAppData.origins)
+        ? [...prevAppData.origins]
+        : [];
       cleanBase.removedContentFormats = Array.isArray(prevAppData.removedContentFormats) ? prevAppData.removedContentFormats : [];
       cleanBase.taskCategoryIcons = prevAppData.taskCategoryIcons || cleanBase.taskCategoryIcons;
       cleanBase.products = keptProducts;
@@ -17714,20 +17714,16 @@ service cloud.firestore {
 
     window.deleteCategory = function(cat) {
       if (window.categoryManageMode === 'tasks') {
-        const prevTaskCategories = [...(window.appData.taskCategories || ["Geral"])];
-        if (prevTaskCategories.length <= 1) {
-          window.showToast("Mantenha pelo menos uma categoria no Banco de Tarefas.", true);
-          return;
-        }
+        const prevTaskCategories = Array.isArray(window.appData.taskCategories) ? [...window.appData.taskCategories] : [];
         window.openGenericConfirmDeleteModal({
           title: 'Apagar Categoria de Tarefas',
           message: `Tem certeza que deseja apagar a categoria <strong>"${escapeHtmlText(cat)}"</strong>?`,
-          impact: 'As tarefas sem data desta categoria serão movidas automaticamente para "Geral".',
+          impact: 'As tarefas vinculadas serão movidas para outra categoria disponível. Se não houver outra, ficarão sem categoria.',
           onConfirm: async () => {
             const backupTasks = JSON.parse(JSON.stringify(window.appData.tasks || []));
             const backupIcons = JSON.parse(JSON.stringify(window.appData.taskCategoryIcons || {}));
             const remaining = prevTaskCategories.filter(c => c !== cat);
-            const fallbackCategory = remaining.includes('Geral') ? 'Geral' : remaining[0];
+            const fallbackCategory = remaining.includes('Geral') ? 'Geral' : (remaining[0] || '');
 
             window.appData.taskCategories = remaining;
             if (window.appData.taskCategoryIcons && window.appData.taskCategoryIcons[cat]) {
@@ -17752,7 +17748,11 @@ service cloud.firestore {
             window.editingCategoryIndex = null;
             window.renderCategoriesConfigList();
             window.renderCalendarView();
-            window.showToast(`Categoria excluída. Tarefas vinculadas movidas para "${fallbackCategory}".`);
+            window.showToast(
+              fallbackCategory
+                ? `Categoria excluída. Tarefas vinculadas movidas para "${fallbackCategory}".`
+                : "Categoria excluída. As tarefas vinculadas ficaram sem categoria."
+            );
           }
         });
         return;
@@ -17762,17 +17762,12 @@ service cloud.firestore {
       window.openGenericConfirmDeleteModal({
         title: 'Apagar Categoria de Produtos',
         message: `Tem certeza que deseja apagar a categoria <strong>"${escapeHtmlText(cat)}"</strong>?`,
-        impact: linkedProdsCount > 0 ? `Os ${linkedProdsCount} produto(s) vinculados a esta categoria serão movidos para "Geral" e continuarão no catálogo.` : '',
+        impact: linkedProdsCount > 0 ? `Os ${linkedProdsCount} produto(s) vinculados continuarão no catálogo e serão movidos para outra categoria disponível. Se não houver outra, ficarão sem categoria.` : '',
         onConfirm: async () => {
           const prevCategories = [...(window.appData.categories || [])];
           const prevProducts = JSON.parse(JSON.stringify(window.appData.products || []));
           const remaining = prevCategories.filter(c => c !== cat);
-          if (remaining.length === 0) {
-            remaining.push('Geral');
-          } else if (linkedProdsCount > 0 && !remaining.some(c => String(c).toLowerCase() === 'geral')) {
-            remaining.unshift('Geral');
-          }
-          const fallbackCategory = remaining.find(c => String(c).toLowerCase() === 'geral') || remaining[0];
+          const fallbackCategory = remaining.find(c => String(c).toLowerCase() === 'geral') || remaining[0] || '';
 
           window.appData.categories = remaining;
           if (linkedProdsCount > 0) {
@@ -17798,7 +17793,9 @@ service cloud.firestore {
           if (currentTab === 'produtos') window.renderProductsView();
           window.showToast(
             linkedProdsCount > 0
-              ? `Categoria excluída. Produtos movidos para "${fallbackCategory}".`
+              ? (fallbackCategory
+                  ? `Categoria excluída. Produtos movidos para "${fallbackCategory}".`
+                  : `Categoria excluída. ${linkedProdsCount} produto(s) ficaram sem categoria.`)
               : "Categoria excluída."
           );
         }
