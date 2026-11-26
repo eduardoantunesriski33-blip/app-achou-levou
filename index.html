@@ -11572,9 +11572,9 @@ service cloud.firestore {
       window.openTaskMenuId = null;
       window.isDraggingPlanningTask = false;
       const allTasks = Array.isArray(window.appData.tasks) ? window.appData.tasks : [];
-      const allCategories = Array.isArray(window.appData.taskCategories)
+      const allCategories = Array.isArray(window.appData.taskCategories) && window.appData.taskCategories.length > 0
         ? window.appData.taskCategories
-        : [];
+        : ['Geral', 'Conteúdo', 'Administrativo', 'Financeiro'];
       const bankVisual = getTaskBankVisualTheme(window.appData.activePlatform);
 
       const mainHeaderIcon = document.getElementById('planningMainHeaderIcon');
@@ -13015,7 +13015,7 @@ service cloud.firestore {
         return base;
       }
 
-      const isRealAccount = raw.isDemoDataset === false || raw.isCleanLocalWorkspace === true || Boolean(authUser) || Boolean(raw.ownerUid);
+      const isRealAccount = raw.isDemoDataset === false || raw.isCleanLocalWorkspace === true || Boolean(authUser);
       const fallback = isRealAccount ? buildCleanWorkspaceDataset() : base;
 
       const rawProds = Array.isArray(raw.products) ? raw.products : fallback.products;
@@ -13157,8 +13157,7 @@ service cloud.firestore {
         activePlatform: typeof raw.activePlatform === 'string' && raw.activePlatform ? raw.activePlatform : fallback.activePlatform,
         activePlanningWeekId: resolvedActiveWeekId,
         planningWeeks: normalizedWeeks,
-        // Em contas reais, a ausência do campo categories nunca deve herdar categorias do pacote demo.
-        categories: Array.isArray(raw.categories) ? [...raw.categories] : (isRealAccount ? [] : fallback.categories),
+        categories: Array.isArray(raw.categories) ? raw.categories : fallback.categories,
         taskCategories: Array.isArray(raw.taskCategories) ? raw.taskCategories : fallback.taskCategories,
         taskCategoryIcons: (raw.taskCategoryIcons && typeof raw.taskCategoryIcons === 'object') ? { ...raw.taskCategoryIcons } : {},
         contentMuralCategories: normalizedMuralCategories,
@@ -13342,7 +13341,13 @@ service cloud.firestore {
         }
       });
 
-      // Não reconstruir categories a partir dos produtos: a lista é gerenciada exclusivamente pelo usuário.
+      // Garante que qualquer categoria usada por um produto exista em categories
+      normalized.products.forEach(p => {
+        const pCat = typeof p?.category === 'string' ? p.category.trim() : '';
+        if (pCat && !normalized.categories.some(c => String(c).toLowerCase() === pCat.toLowerCase())) {
+          normalized.categories.push(pCat);
+        }
+      });
 
       // Garante que nenhum conteúdo ativo na Biblioteca de Conteúdos fique órfão/invisível sem categoria correspondente
       const validMuralCatIds = new Set(normalized.contentMuralCategories.map(c => c.id));
@@ -14013,30 +14018,6 @@ service cloud.firestore {
         if (clean && !seenLower.has(clean.toLowerCase())) {
           seenLower.add(clean.toLowerCase());
           result.push(clean);
-        }
-      });
-      return result;
-    }
-
-    // No snapshot confirmado, as listas configuráveis da nuvem são autoritativas.
-    // Isso permite que [] represente uma exclusão intencional, sem ressuscitar itens locais antigos.
-    const CLOUD_AUTHORITATIVE_STRING_LIST_KEYS = Object.freeze([
-      'categories',
-      'taskCategories',
-      'origins',
-      'customSalesPlatforms',
-      'customTargetPlatforms'
-    ]);
-
-    function applyCloudAuthoritativeStringLists(mergedData, cloudData) {
-      const result = (mergedData && typeof mergedData === 'object' && !Array.isArray(mergedData))
-        ? { ...mergedData }
-        : {};
-      if (!cloudData || typeof cloudData !== 'object' || Array.isArray(cloudData)) return result;
-
-      CLOUD_AUTHORITATIVE_STRING_LIST_KEYS.forEach(key => {
-        if (Object.prototype.hasOwnProperty.call(cloudData, key) && Array.isArray(cloudData[key])) {
-          result[key] = [...cloudData[key]];
         }
       });
       return result;
@@ -16602,17 +16583,6 @@ service cloud.firestore {
 
         const customSalesPlats = Array.isArray(parsed.customSalesPlatforms) ? parsed.customSalesPlatforms.filter(Boolean) : [];
         const customTargetPlats = Array.isArray(parsed.customTargetPlatforms) ? parsed.customTargetPlatforms.filter(Boolean) : [];
-        // Não migrar categorias que vieram do catálogo inicial da demonstração para a conta real.
-        const demoSeedProductCategories = new Set([
-          'roupas', 'calçados', 'acessórios', 'casa', 'eletrodomésticos', 'beleza'
-        ]);
-        const extractedProductCategories = (Array.isArray(parsed.categories) ? parsed.categories : [])
-          .filter(category => {
-            const cleanName = String(category ?? '').trim();
-            if (!cleanName) return false;
-            const isDemoBase = parsed.isDemoDataset === true || parsed.isCleanLocalWorkspace === true;
-            return !(isDemoBase && demoSeedProductCategories.has(cleanName.toLocaleLowerCase('pt-BR')));
-          });
         const hasCustomUserProfile = Boolean(
           parsed.user &&
           ((parsed.user.name && parsed.user.name !== 'Dudu') ||
@@ -16652,7 +16622,7 @@ service cloud.firestore {
           customContentFormats: customFormats,
           customSalesPlatforms: customSalesPlats,
           customTargetPlatforms: customTargetPlats,
-          categories: extractedProductCategories,
+          categories: Array.isArray(parsed.categories) ? parsed.categories : [],
           taskCategories: Array.isArray(parsed.taskCategories) ? parsed.taskCategories : [],
           origins: Array.isArray(parsed.origins) ? parsed.origins : []
         };
@@ -17518,11 +17488,16 @@ service cloud.firestore {
       if (modalFilt) modalFilt.innerHTML = '<option value="Todas">Todas as Categorias</option>';
       if (muralSelCat) muralSelCat.innerHTML = '<option value="Todas">Todas as categorias</option>';
 
-      // A lista configurada pelo usuário é a única fonte das categorias.
-      // Não recriar categorias a partir dos produtos nem inserir "Geral" automaticamente.
-      const mergedCategories = Array.isArray(window.appData.categories)
-        ? [...window.appData.categories]
-        : [];
+      const mergedCategories = Array.isArray(window.appData.categories) ? [...window.appData.categories] : [];
+      (window.appData.products || []).forEach(p => {
+        const pCat = typeof p?.category === 'string' ? p.category.trim() : '';
+        if (pCat && !mergedCategories.some(c => String(c).toLowerCase() === pCat.toLowerCase())) {
+          mergedCategories.push(pCat);
+        }
+      });
+      if (mergedCategories.length === 0) {
+        mergedCategories.push('Geral');
+      }
 
       mergedCategories.forEach(c => {
         const safeCat = escapeHtmlText(c);
@@ -17739,16 +17714,20 @@ service cloud.firestore {
 
     window.deleteCategory = function(cat) {
       if (window.categoryManageMode === 'tasks') {
-        const prevTaskCategories = Array.isArray(window.appData.taskCategories) ? [...window.appData.taskCategories] : [];
+        const prevTaskCategories = [...(window.appData.taskCategories || ["Geral"])];
+        if (prevTaskCategories.length <= 1) {
+          window.showToast("Mantenha pelo menos uma categoria no Banco de Tarefas.", true);
+          return;
+        }
         window.openGenericConfirmDeleteModal({
           title: 'Apagar Categoria de Tarefas',
           message: `Tem certeza que deseja apagar a categoria <strong>"${escapeHtmlText(cat)}"</strong>?`,
-          impact: 'As tarefas vinculadas serão movidas para outra categoria disponível. Se não houver outra, ficarão sem categoria.',
+          impact: 'As tarefas sem data desta categoria serão movidas automaticamente para "Geral".',
           onConfirm: async () => {
             const backupTasks = JSON.parse(JSON.stringify(window.appData.tasks || []));
             const backupIcons = JSON.parse(JSON.stringify(window.appData.taskCategoryIcons || {}));
             const remaining = prevTaskCategories.filter(c => c !== cat);
-            const fallbackCategory = remaining.includes('Geral') ? 'Geral' : (remaining[0] || '');
+            const fallbackCategory = remaining.includes('Geral') ? 'Geral' : remaining[0];
 
             window.appData.taskCategories = remaining;
             if (window.appData.taskCategoryIcons && window.appData.taskCategoryIcons[cat]) {
@@ -17773,11 +17752,7 @@ service cloud.firestore {
             window.editingCategoryIndex = null;
             window.renderCategoriesConfigList();
             window.renderCalendarView();
-            window.showToast(
-              fallbackCategory
-                ? `Categoria excluída. Tarefas vinculadas movidas para "${fallbackCategory}".`
-                : "Categoria excluída. As tarefas vinculadas ficaram sem categoria."
-            );
+            window.showToast(`Categoria excluída. Tarefas vinculadas movidas para "${fallbackCategory}".`);
           }
         });
         return;
@@ -17787,12 +17762,17 @@ service cloud.firestore {
       window.openGenericConfirmDeleteModal({
         title: 'Apagar Categoria de Produtos',
         message: `Tem certeza que deseja apagar a categoria <strong>"${escapeHtmlText(cat)}"</strong>?`,
-        impact: linkedProdsCount > 0 ? `Os ${linkedProdsCount} produto(s) vinculados continuarão no catálogo e serão movidos para outra categoria disponível. Se não houver outra, ficarão sem categoria.` : '',
+        impact: linkedProdsCount > 0 ? `Os ${linkedProdsCount} produto(s) vinculados a esta categoria serão movidos para "Geral" e continuarão no catálogo.` : '',
         onConfirm: async () => {
           const prevCategories = [...(window.appData.categories || [])];
           const prevProducts = JSON.parse(JSON.stringify(window.appData.products || []));
           const remaining = prevCategories.filter(c => c !== cat);
-          const fallbackCategory = remaining.find(c => String(c).toLowerCase() === 'geral') || remaining[0] || '';
+          if (remaining.length === 0) {
+            remaining.push('Geral');
+          } else if (linkedProdsCount > 0 && !remaining.some(c => String(c).toLowerCase() === 'geral')) {
+            remaining.unshift('Geral');
+          }
+          const fallbackCategory = remaining.find(c => String(c).toLowerCase() === 'geral') || remaining[0];
 
           window.appData.categories = remaining;
           if (linkedProdsCount > 0) {
@@ -17818,9 +17798,7 @@ service cloud.firestore {
           if (currentTab === 'produtos') window.renderProductsView();
           window.showToast(
             linkedProdsCount > 0
-              ? (fallbackCategory
-                  ? `Categoria excluída. Produtos movidos para "${fallbackCategory}".`
-                  : `Categoria excluída. ${linkedProdsCount} produto(s) ficaram sem categoria.`)
+              ? `Categoria excluída. Produtos movidos para "${fallbackCategory}".`
               : "Categoria excluída."
           );
         }
@@ -21712,10 +21690,7 @@ service cloud.firestore {
           if (localSeq > 0 && cloudSeq >= localSeq && currentLocalParsed) {
             const mergeRes = mergeLegacyAccountDataPreservingConflicts(currentLocalParsed, rawData, userKey, storageAdapter);
             if (mergeRes && mergeRes.backupConfirmed) {
-              // Mantém a preservação de conflitos dos demais dados, mas não faz união de listas
-              // configuráveis: o snapshot confirmado precisa respeitar inclusões e exclusões.
-              const mergedSnapshotData = applyCloudAuthoritativeStringLists(mergeRes.mergedData, rawData);
-              rawData = { ...mergedSnapshotData, ownerUid: uid, isDemoDataset: false };
+              rawData = { ...mergeRes.mergedData, ownerUid: uid, isDemoDataset: false };
             }
           }
 
