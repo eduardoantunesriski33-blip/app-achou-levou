@@ -13015,7 +13015,7 @@ service cloud.firestore {
         return base;
       }
 
-      const isRealAccount = raw.isDemoDataset === false || raw.isCleanLocalWorkspace === true || Boolean(authUser);
+      const isRealAccount = raw.isDemoDataset === false || raw.isCleanLocalWorkspace === true || Boolean(authUser) || Boolean(raw.ownerUid);
       const fallback = isRealAccount ? buildCleanWorkspaceDataset() : base;
 
       const rawProds = Array.isArray(raw.products) ? raw.products : fallback.products;
@@ -13157,7 +13157,8 @@ service cloud.firestore {
         activePlatform: typeof raw.activePlatform === 'string' && raw.activePlatform ? raw.activePlatform : fallback.activePlatform,
         activePlanningWeekId: resolvedActiveWeekId,
         planningWeeks: normalizedWeeks,
-        categories: Array.isArray(raw.categories) ? raw.categories : fallback.categories,
+        // Em contas reais, a ausência do campo categories nunca deve herdar categorias do pacote demo.
+        categories: Array.isArray(raw.categories) ? [...raw.categories] : (isRealAccount ? [] : fallback.categories),
         taskCategories: Array.isArray(raw.taskCategories) ? raw.taskCategories : fallback.taskCategories,
         taskCategoryIcons: (raw.taskCategoryIcons && typeof raw.taskCategoryIcons === 'object') ? { ...raw.taskCategoryIcons } : {},
         contentMuralCategories: normalizedMuralCategories,
@@ -13341,13 +13342,7 @@ service cloud.firestore {
         }
       });
 
-      // Garante que qualquer categoria usada por um produto exista em categories
-      normalized.products.forEach(p => {
-        const pCat = typeof p?.category === 'string' ? p.category.trim() : '';
-        if (pCat && !normalized.categories.some(c => String(c).toLowerCase() === pCat.toLowerCase())) {
-          normalized.categories.push(pCat);
-        }
-      });
+      // Não reconstruir categories a partir dos produtos: a lista é gerenciada exclusivamente pelo usuário.
 
       // Garante que nenhum conteúdo ativo na Biblioteca de Conteúdos fique órfão/invisível sem categoria correspondente
       const validMuralCatIds = new Set(normalized.contentMuralCategories.map(c => c.id));
@@ -16607,6 +16602,17 @@ service cloud.firestore {
 
         const customSalesPlats = Array.isArray(parsed.customSalesPlatforms) ? parsed.customSalesPlatforms.filter(Boolean) : [];
         const customTargetPlats = Array.isArray(parsed.customTargetPlatforms) ? parsed.customTargetPlatforms.filter(Boolean) : [];
+        // Não migrar categorias que vieram do catálogo inicial da demonstração para a conta real.
+        const demoSeedProductCategories = new Set([
+          'roupas', 'calçados', 'acessórios', 'casa', 'eletrodomésticos', 'beleza'
+        ]);
+        const extractedProductCategories = (Array.isArray(parsed.categories) ? parsed.categories : [])
+          .filter(category => {
+            const cleanName = String(category ?? '').trim();
+            if (!cleanName) return false;
+            const isDemoBase = parsed.isDemoDataset === true || parsed.isCleanLocalWorkspace === true;
+            return !(isDemoBase && demoSeedProductCategories.has(cleanName.toLocaleLowerCase('pt-BR')));
+          });
         const hasCustomUserProfile = Boolean(
           parsed.user &&
           ((parsed.user.name && parsed.user.name !== 'Dudu') ||
@@ -16646,7 +16652,7 @@ service cloud.firestore {
           customContentFormats: customFormats,
           customSalesPlatforms: customSalesPlats,
           customTargetPlatforms: customTargetPlats,
-          categories: Array.isArray(parsed.categories) ? parsed.categories : [],
+          categories: extractedProductCategories,
           taskCategories: Array.isArray(parsed.taskCategories) ? parsed.taskCategories : [],
           origins: Array.isArray(parsed.origins) ? parsed.origins : []
         };
