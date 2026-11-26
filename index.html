@@ -4850,14 +4850,6 @@ service cloud.firestore {
       return allMeta.filter(m => isDisclosurePlatformActive(m.key)).map(m => m.key);
     }
 
-    function getMuralFilterPlatformOptions() {
-      const activeSales = getAllConfiguredSalesPlatformsMeta().filter(m => isSalesPlatformActive(m.key));
-      return [
-        ...activeSales.map(m => ({ key: m.key, label: m.label, icon: m.icon })),
-        { key: 'Personalizada', label: 'Personalizada', icon: 'fa-solid fa-sliders' }
-      ];
-    }
-
     const MURAL_FILTER_PLATFORM_OPTIONS = [
       { key: 'Shopee', label: 'Shopee', icon: 'fa-solid fa-bag-shopping' },
       { key: 'Mercado Livre', label: 'Mercado Livre', icon: 'fa-solid fa-handshake' },
@@ -4866,6 +4858,10 @@ service cloud.firestore {
       { key: 'Shein', label: 'Shein', icon: 'fa-solid fa-tag' },
       { key: 'Personalizada', label: 'Personalizada', icon: 'fa-solid fa-sliders' }
     ];
+
+    function getMuralFilterPlatformOptions() {
+      return MURAL_FILTER_PLATFORM_OPTIONS;
+    }
 
     window.editingMuralCategoryId = null;
     window.isSavingMuralCategory = false;
@@ -4895,9 +4891,6 @@ service cloud.firestore {
       if (selected.length === 0) return false;
 
       const normalizedPlat = normalizeCategoryPlatformForFilter(cat?.platform);
-      if (normalizedPlat !== 'Todas' && normalizedPlat !== 'Personalizada' && !isSalesPlatformActive(normalizedPlat)) {
-        return false;
-      }
 
       if (!isAllMuralPlatformsSelected()) {
         if (normalizedPlat === 'Todas') return true;
