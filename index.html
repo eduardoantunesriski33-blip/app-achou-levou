@@ -13157,7 +13157,7 @@ service cloud.firestore {
         activePlatform: typeof raw.activePlatform === 'string' && raw.activePlatform ? raw.activePlatform : fallback.activePlatform,
         activePlanningWeekId: resolvedActiveWeekId,
         planningWeeks: normalizedWeeks,
-        categories: Array.isArray(raw.categories) ? raw.categories : fallback.categories,
+        categories: (Array.isArray(raw.categories) ? raw.categories : fallback.categories).filter(c => !["Roupas", "Calçados", "Acessórios", "Casa", "Eletrodomésticos", "Beleza", "do."].includes(c)),
         taskCategories: Array.isArray(raw.taskCategories) ? raw.taskCategories : fallback.taskCategories,
         taskCategoryIcons: (raw.taskCategoryIcons && typeof raw.taskCategoryIcons === 'object') ? { ...raw.taskCategoryIcons } : {},
         contentMuralCategories: normalizedMuralCategories,
@@ -14150,7 +14150,10 @@ service cloud.firestore {
       const stringArrayKeys = ['categories', 'taskCategories', 'origins', 'customSalesPlatforms', 'customTargetPlatforms'];
       stringArrayKeys.forEach(k => {
         handledRootKeys.add(k);
-        if (k in legacy || k in merged) {
+        if (k === 'categories') {
+          // Bloqueia a inserção de categorias antigas, preservando integralmente o array de destino (inclusive vazio)
+          if (!Array.isArray(merged[k])) merged[k] = [];
+        } else if (k in legacy || k in merged) {
           merged[k] = mergeStringListUnique(merged[k], legacy[k]);
         }
       });
@@ -16603,6 +16606,9 @@ service cloud.firestore {
            (typeof parsed.user.monthlyGoal === 'number' && parsed.user.monthlyGoal !== 2000))
         );
 
+        const defaultDemoCategories = ["Roupas", "Calçados", "Acessórios", "Casa", "Eletrodomésticos", "Beleza", "do."];
+        const extractedProductCategories = (Array.isArray(parsed.categories) ? parsed.categories : []).filter(c => !defaultDemoCategories.includes(c));
+
         const hasAnyUserCreatedData =
           customProducts.length > 0 ||
           customSales.length > 0 ||
@@ -16615,6 +16621,7 @@ service cloud.firestore {
           customPlanningWeeks.length > 0 ||
           customSalesPlats.length > 0 ||
           customTargetPlats.length > 0 ||
+          extractedProductCategories.length > 0 ||
           hasCustomUserProfile;
 
         if (!hasAnyUserCreatedData) return null;
@@ -16636,7 +16643,7 @@ service cloud.firestore {
           customContentFormats: customFormats,
           customSalesPlatforms: customSalesPlats,
           customTargetPlatforms: customTargetPlats,
-          categories: Array.isArray(parsed.categories) ? parsed.categories : [],
+          categories: extractedProductCategories,
           taskCategories: Array.isArray(parsed.taskCategories) ? parsed.taskCategories : [],
           origins: Array.isArray(parsed.origins) ? parsed.origins : []
         };
@@ -21686,6 +21693,13 @@ service cloud.firestore {
         if (snap.exists()) {
           let rawData = { ...snap.data(), ownerUid: uid };
           const cloudSeq = Number(rawData._syncSeq) || 0;
+
+          // Proteção para garantir que um snapshot antigo não ressuscite categorias apagadas localmente
+          if (currentLocalParsed && cloudSeq <= localSeq) {
+            if (Array.isArray(currentLocalParsed.categories)) rawData.categories = [...currentLocalParsed.categories];
+            if (Array.isArray(currentLocalParsed.taskCategories)) rawData.taskCategories = [...currentLocalParsed.taskCategories];
+            if (Array.isArray(currentLocalParsed.origins)) rawData.origins = [...currentLocalParsed.origins];
+          }
 
           if (localSeq > cloudSeq) {
             console.warn(`Nuvem atrasada (Local: ${localSeq}, Nuvem: ${cloudSeq}). Protegendo dados locais.`);
