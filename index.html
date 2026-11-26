@@ -19368,9 +19368,16 @@ service cloud.firestore {
     };
 
     window.calcProdEstCommission = function() {
-      const price = parseFloat(document.getElementById('prodPrice').value) || 0;
-      const rate = parseFloat(document.getElementById('prodCommissionRate').value) || 0;
-      const est = price * (rate / 100);
+      const priceStr = document.getElementById('prodPrice').value.trim();
+      const rateStr = document.getElementById('prodCommissionRate').value.trim();
+      
+      const price = parseFloat(priceStr);
+      const rate = parseFloat(rateStr);
+      
+      const validPrice = isNaN(price) ? 0 : price;
+      const validRate = isNaN(rate) ? 0 : rate;
+      
+      const est = validPrice * (validRate / 100);
       const valEl = document.getElementById('prodEstCommValue');
       if (valEl) valEl.innerText = window.formatCurrency(est);
     };
@@ -20334,8 +20341,19 @@ service cloud.firestore {
     window.saveNewGoalValue = async function() {
       const inputEl = document.getElementById('inputNewGoalValue');
       if (!inputEl) return;
-      let val = parseFloat(inputEl.value);
-      if (isNaN(val)) val = 1000;
+      
+      const rawValue = inputEl.value.trim();
+      if (rawValue === '') {
+        window.showToast("Por favor, preencha um valor para a meta.", true);
+        return;
+      }
+
+      const val = parseFloat(rawValue);
+      if (isNaN(val) || val < 0) {
+        window.showToast("Informe um valor numérico válido (maior ou igual a zero).", true);
+        return;
+      }
+
       const prevGoal = window.appData.user?.monthlyGoal ?? 1000;
       if (!window.appData.user) window.appData.user = {};
       
