@@ -13261,7 +13261,7 @@ service cloud.firestore {
           id: p.id || ('p_' + Math.random().toString(36).slice(2, 9)),
           name: stripDemoLabel(p.name || 'Produto sem nome') || 'Produto sem nome',
           platform: p.platform || 'Shopee',
-          category: p.category || 'Geral',
+          category: typeof p.category === 'string' ? p.category : '',
           price: typeof p.price === 'number' ? p.price : (parseFloat(p.price) || 0),
           commissionRate: typeof p.commissionRate === 'number' ? p.commissionRate : (parseFloat(p.commissionRate) || 0),
           image: (typeof p.image === 'string' && !p.image.includes('images.unsplash.com/photo-1526170375885-4d8ecf77b99f')) ? p.image : '',
@@ -13341,13 +13341,7 @@ service cloud.firestore {
         }
       });
 
-      // Garante que qualquer categoria usada por um produto exista em categories
-      normalized.products.forEach(p => {
-        const pCat = typeof p?.category === 'string' ? p.category.trim() : '';
-        if (pCat && !normalized.categories.some(c => String(c).toLowerCase() === pCat.toLowerCase())) {
-          normalized.categories.push(pCat);
-        }
-      });
+      // (Loop Zumbi de Produtos Removido: Não recria mais categorias a partir dos produtos para respeitar arrays vazios)
 
       // Garante que nenhum conteúdo ativo na Biblioteca de Conteúdos fique órfão/invisível sem categoria correspondente
       const validMuralCatIds = new Set(normalized.contentMuralCategories.map(c => c.id));
@@ -17762,17 +17756,12 @@ service cloud.firestore {
       window.openGenericConfirmDeleteModal({
         title: 'Apagar Categoria de Produtos',
         message: `Tem certeza que deseja apagar a categoria <strong>"${escapeHtmlText(cat)}"</strong>?`,
-        impact: linkedProdsCount > 0 ? `Os ${linkedProdsCount} produto(s) vinculados a esta categoria serão movidos para "Geral" e continuarão no catálogo.` : '',
+        impact: linkedProdsCount > 0 ? `Os ${linkedProdsCount} produto(s) vinculados a esta categoria ficarão sem categoria (ou movidos para "Geral", se existir).` : '',
         onConfirm: async () => {
           const prevCategories = [...(window.appData.categories || [])];
           const prevProducts = JSON.parse(JSON.stringify(window.appData.products || []));
           const remaining = prevCategories.filter(c => c !== cat);
-          if (remaining.length === 0) {
-            remaining.push('Geral');
-          } else if (linkedProdsCount > 0 && !remaining.some(c => String(c).toLowerCase() === 'geral')) {
-            remaining.unshift('Geral');
-          }
-          const fallbackCategory = remaining.find(c => String(c).toLowerCase() === 'geral') || remaining[0];
+          const fallbackCategory = remaining.find(c => String(c).toLowerCase() === 'geral') || remaining[0] || '';
 
           window.appData.categories = remaining;
           if (linkedProdsCount > 0) {
@@ -17798,7 +17787,7 @@ service cloud.firestore {
           if (currentTab === 'produtos') window.renderProductsView();
           window.showToast(
             linkedProdsCount > 0
-              ? `Categoria excluída. Produtos movidos para "${fallbackCategory}".`
+              ? `Categoria excluída. Produtos reclassificados.`
               : "Categoria excluída."
           );
         }
