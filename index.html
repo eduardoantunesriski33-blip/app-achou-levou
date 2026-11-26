@@ -14023,6 +14023,30 @@ service cloud.firestore {
       return result;
     }
 
+    // No snapshot confirmado, as listas configuráveis da nuvem são autoritativas.
+    // Isso permite que [] represente uma exclusão intencional, sem ressuscitar itens locais antigos.
+    const CLOUD_AUTHORITATIVE_STRING_LIST_KEYS = Object.freeze([
+      'categories',
+      'taskCategories',
+      'origins',
+      'customSalesPlatforms',
+      'customTargetPlatforms'
+    ]);
+
+    function applyCloudAuthoritativeStringLists(mergedData, cloudData) {
+      const result = (mergedData && typeof mergedData === 'object' && !Array.isArray(mergedData))
+        ? { ...mergedData }
+        : {};
+      if (!cloudData || typeof cloudData !== 'object' || Array.isArray(cloudData)) return result;
+
+      CLOUD_AUTHORITATIVE_STRING_LIST_KEYS.forEach(key => {
+        if (Object.prototype.hasOwnProperty.call(cloudData, key) && Array.isArray(cloudData[key])) {
+          result[key] = [...cloudData[key]];
+        }
+      });
+      return result;
+    }
+
     function recordPreservedLegacyProperty(preservedMap, pathKey, legacyVal, conflictsOut, existingVal) {
       if (!preservedMap[pathKey]) {
         preservedMap[pathKey] = [];
@@ -21682,7 +21706,10 @@ service cloud.firestore {
           if (localSeq > 0 && cloudSeq >= localSeq && currentLocalParsed) {
             const mergeRes = mergeLegacyAccountDataPreservingConflicts(currentLocalParsed, rawData, userKey, storageAdapter);
             if (mergeRes && mergeRes.backupConfirmed) {
-              rawData = { ...mergeRes.mergedData, ownerUid: uid, isDemoDataset: false };
+              // Mantém a preservação de conflitos dos demais dados, mas não faz união de listas
+              // configuráveis: o snapshot confirmado precisa respeitar inclusões e exclusões.
+              const mergedSnapshotData = applyCloudAuthoritativeStringLists(mergeRes.mergedData, rawData);
+              rawData = { ...mergedSnapshotData, ownerUid: uid, isDemoDataset: false };
             }
           }
 
