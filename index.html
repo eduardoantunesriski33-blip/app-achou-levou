@@ -17488,16 +17488,11 @@ service cloud.firestore {
       if (modalFilt) modalFilt.innerHTML = '<option value="Todas">Todas as Categorias</option>';
       if (muralSelCat) muralSelCat.innerHTML = '<option value="Todas">Todas as categorias</option>';
 
-      const mergedCategories = Array.isArray(window.appData.categories) ? [...window.appData.categories] : [];
-      (window.appData.products || []).forEach(p => {
-        const pCat = typeof p?.category === 'string' ? p.category.trim() : '';
-        if (pCat && !mergedCategories.some(c => String(c).toLowerCase() === pCat.toLowerCase())) {
-          mergedCategories.push(pCat);
-        }
-      });
-      if (mergedCategories.length === 0) {
-        mergedCategories.push('Geral');
-      }
+      // A lista configurada pelo usuário é a única fonte das categorias.
+      // Não recriar categorias a partir dos produtos nem inserir "Geral" automaticamente.
+      const mergedCategories = Array.isArray(window.appData.categories)
+        ? [...window.appData.categories]
+        : [];
 
       mergedCategories.forEach(c => {
         const safeCat = escapeHtmlText(c);
