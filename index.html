@@ -3116,79 +3116,17 @@ service cloud.firestore {
         throw new Error("Nenhum arquivo de imagem selecionado para envio.");
       }
 
-      const compressedDataUrl = await compressImageFileToDataUrl(file, 900, 0.88);
-      if (!storage || window.isDemoMode) {
-        return { downloadUrl: compressedDataUrl, storagePath: '' };
-      }
-
-      try {
-        const imageBlob = dataUrlToBlob(compressedDataUrl);
-        if (!imageBlob || imageBlob.size === 0) {
-          throw new Error("Falha ao gerar o Blob da imagem comprimida.");
-        }
-
-        const safeUid = String(currentUserId || (auth && auth.currentUser && auth.currentUser.uid) || 'local_user')
-          .trim()
-          .replace(/[^a-zA-Z0-9_-]/g, '_');
-        const safeProdId = String(productId || ('p_' + Date.now()))
-          .trim()
-          .replace(/[^a-zA-Z0-9_-]/g, '_');
-        const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        const storagePath = `artifacts/${appId}/users/${safeUid}/products/${safeProdId}/img_${uniqueSuffix}.jpg`;
-
-        const fileRef = storageRef(storage, storagePath);
-        const uploadPromise = (async () => {
-          const uploadResult = await uploadBytes(fileRef, imageBlob, {
-            contentType: imageBlob.type || 'image/jpeg'
-          });
-          return await getDownloadURL(uploadResult && uploadResult.ref ? uploadResult.ref : fileRef);
-        })();
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Tempo limite de upload excedido, usando armazenamento rápido.")), 2500)
-        );
-        const downloadUrl = await Promise.race([uploadPromise, timeoutPromise]);
-
-        if (!downloadUrl || typeof downloadUrl !== 'string') {
-          throw new Error("Não foi possível obter a URL da imagem no Firebase Storage.");
-        }
-
-        return { downloadUrl, storagePath };
-      } catch (storageErr) {
-        console.warn("Fallback local de imagem ativado:", storageErr);
-        return { downloadUrl: compressedDataUrl, storagePath: '' };
-      }
+      // Comprime e salva diretamente como texto otimizado (Base64) no Firestore (100% gratuito, sem depender do Storage pago)
+      const compressedDataUrl = await compressImageFileToDataUrl(file, 650, 0.78);
+      return { downloadUrl: compressedDataUrl, storagePath: '' };
     }
 
     async function uploadUserAvatarToStorage(file) {
       if (!file) throw new Error("Nenhum arquivo de imagem selecionado.");
       
-      const compressedDataUrl = await compressImageFileToDataUrl(file, 400, 0.85); // Tamanho reduzido para foto de perfil
-      if (!storage || window.isDemoMode) {
-        return { downloadUrl: compressedDataUrl, storagePath: '' };
-      }
-
-      try {
-        const imageBlob = dataUrlToBlob(compressedDataUrl);
-        if (!imageBlob || imageBlob.size === 0) throw new Error("Falha no blob.");
-
-        const safeUid = String(currentUserId || (auth?.currentUser?.uid) || 'local_user').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
-        const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        const storagePath = `artifacts/${appId}/users/${safeUid}/profile/avatar_${uniqueSuffix}.jpg`;
-
-        const fileRef = storageRef(storage, storagePath);
-        const uploadPromise = (async () => {
-          const uploadResult = await uploadBytes(fileRef, imageBlob, { contentType: imageBlob.type || 'image/jpeg' });
-          return await getDownloadURL(uploadResult?.ref || fileRef);
-        })();
-        
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000));
-        const downloadUrl = await Promise.race([uploadPromise, timeoutPromise]);
-
-        return { downloadUrl, storagePath };
-      } catch (storageErr) {
-        console.warn("Fallback local para avatar ativado:", storageErr);
-        return { downloadUrl: compressedDataUrl, storagePath: '' };
-      }
+      // Comprime o avatar em tamanho leve para salvar direto no Firestore sem usar Storage
+      const compressedDataUrl = await compressImageFileToDataUrl(file, 300, 0.78);
+      return { downloadUrl: compressedDataUrl, storagePath: '' };
     }
 
     window.copyAffiliateLink = function(link) {
@@ -15904,8 +15842,8 @@ service cloud.firestore {
           if (!currentLocal || currentLocal._syncSeq === jobData._syncSeq) {
             localStorage.setItem(getUserStorageKey(uid), JSON.stringify(jobData));
           }
-        } catch (_) {}
-      }
+    // Mantém as imagens otimizadas no próprio documento do Firestore sem tentar enviá-las ao Storage
+    async function offloadPendingBase64ImagesBeforeCloudSync(jobData, uid) {
       return jobData;
     }
 
